@@ -1,5 +1,12 @@
 import { useRef, useState } from "react";
-import { Map, RotateCw, ChevronRight, Check, Star } from "lucide-react";
+import {
+  RotateCw,
+  ChevronRight,
+  Check,
+  Star,
+  BookA,
+  CreditCard,
+} from "lucide-react";
 import {
   restaurants,
   rideNames,
@@ -10,7 +17,7 @@ import {
   type Restaurant,
 } from "../engine/script";
 import { TonightPlan } from "./TonightPlan";
-import { asset, Pal } from "./Pal";
+import { asset } from "./Pal";
 export type Sheet = { type: string; value?: any } | null;
 export function Button({
   children,
@@ -96,27 +103,27 @@ const recommendations: Record<string, [string, string]> = {
   ],
   planetree: [
     "Quietest",
-    "A peaceful courtyard and the shortest ride — good for an unhurried conversation.",
+    "Courtyard tables under plane trees. Smaller menu, calmest room of the three.",
   ],
   shanghaitable: [
     "Best for dumplings",
-    "A good choice for Shanghai dumplings and familiar local favourites within your budget.",
+    "Known for soup dumplings and crab dishes. Quick service.",
   ],
   riverside: [
     "Best view",
-    "River views make dinner feel special, while keeping the meal under your budget.",
+    "Window tables over the river. The priciest and the longest ride.",
   ],
   pearl: [
     "Best match",
-    "Cantonese dim sum for sharing, a short ride away and comfortably within your budget.",
+    "Classic dim sum — har gow, siu mai. English photo menu, 12 min away.",
   ],
   canton: [
     "Roast meats",
-    "Classic Cantonese roast meats if you'd like a hearty dinner for two.",
+    "Famous for roast goose and char siu. Lively and a bit loud.",
   ],
   harbour: [
     "Seafood",
-    "A seafood-focused Cantonese menu for a different take on tonight's dinner.",
+    "Steamed fish and seafood in a quieter room. The longest ride.",
   ],
 };
 function Carousel({
@@ -170,19 +177,37 @@ function Carousel({
               {r.name} <span lang="zh">{r.cn}</span>
             </h3>
             <p className="muted">
-              {batch === 2 ? "Cantonese" : "Shanghainese"} · ~¥{r.price} /
-              person
+              {batch === 2 ? "Cantonese" : "Shanghainese"} · ¥{r.price} / person
+              · {r.distance} km
             </p>
             <div className="recommend-why">
+              <img
+                className="recommend-pal"
+                width={18}
+                height={18}
+                src={asset("93f98.svg")}
+                alt="Main Pal"
+              />
               <div>
-                <Pal state="mini" size={18} />
                 <strong>Why Main Pal picked it</strong>
+                <p title={recommendations[r.id][1]}>
+                  {recommendations[r.id][1]}
+                </p>
               </div>
-              <p>{recommendations[r.id][1]}</p>
             </div>
             <div className="tags">
-              <span>English menu</span>
-              <span>Foreign cards OK</span>
+              {r.englishMenu && (
+                <span>
+                  <BookA size={14} aria-hidden="true" />
+                  English menu
+                </span>
+              )}
+              {r.foreignCards && (
+                <span>
+                  <CreditCard size={14} aria-hidden="true" />
+                  Foreign cards OK
+                </span>
+              )}
             </div>
             <div
               className={`trip-row ${m.version !== s.version && (s.exceptionResolved || s.step === "exception") ? "old-estimate" : ""}`}
@@ -199,7 +224,7 @@ function Carousel({
                 aria-label={`Map for ${r.name}`}
                 onClick={() => open({ type: "map", value: r })}
               >
-                <Map size={19} />
+                <img width={20} height={20} src={asset("62660.svg")} alt="" />
               </button>
             </div>
             <div className="button-row">
@@ -274,13 +299,80 @@ export function Card({
   dispatch: React.Dispatch<Action>;
   open: (sheet: Sheet) => void;
 }) {
-  const active = m.version === s.version && !s.cancelPrompt;
+  const active = m.version === s.version && !s.cancelPrompt && !s.decision;
   const p = m.plan!,
     r = m.restaurant!,
     rr = route(r, p);
   const send = (type: string, value?: any) => () => dispatch({ type, value });
   const live = ["booking", "rideType"].includes(m.card || "") && active;
   const plan = live ? s.plan : p;
+  const cancel = (target: "table" | "ride") => {
+    const available =
+      r.id === s.restaurant.id &&
+      (target === "table"
+        ? !s.tableOutcome &&
+          (s.booked ||
+            ["booking", "bookingWork", "updated", "stopping"].includes(s.step))
+        : !s.rideOutcome && s.plan.ride);
+    return available ? (
+      <button
+        className="booking-cancel"
+        disabled={!!s.cancelPrompt}
+        onClick={send("CANCEL_PROMPT", { target, fromCard: true })}
+      >
+        Cancel
+      </button>
+    ) : null;
+  };
+  if (m.card === "decision")
+    return (
+      <div
+        className={`quick-replies ${s.decision?.id !== m.id ? "answered" : ""}`}
+      >
+        <Button
+          disabled={s.decision?.id !== m.id}
+          onClick={send("DECISION_YES", m.id)}
+        >
+          {m.decision?.label}
+        </Button>
+        <Button
+          secondary
+          disabled={s.decision?.id !== m.id}
+          onClick={() => {
+            dispatch({ type: "DECISION_NO", value: m.id });
+            if (m.decision?.draft)
+              open({ type: "edit", value: { prefill: m.decision.draft } });
+          }}
+        >
+          No
+        </Button>
+      </div>
+    );
+  if (m.card === "clarify") {
+    const enabled =
+      s.clarifying &&
+      s.messages.filter((x) => x.card === "clarify").at(-1)?.id === m.id;
+    return (
+      <div className={`quick-replies ${!enabled ? "answered" : ""}`}>
+        <Button
+          secondary
+          disabled={!enabled || s.step !== "exception"}
+          onClick={send("CHOOSE_B")}
+        >
+          Another place at 7
+        </Button>
+        <Button
+          secondary
+          disabled={!enabled || s.booked || s.rideBooked}
+          onClick={() =>
+            open({ type: "edit", value: { prefill: s.editDraft } })
+          }
+        >
+          Customize…
+        </Button>
+      </div>
+    );
+  }
   if (m.card === "carousel")
     return <Carousel {...{ s, m, active, dispatch, open }} />;
   if (m.card === "request")
@@ -364,7 +456,10 @@ export function Card({
   if (m.card === "booking")
     return (
       <section className="card">
-        <h3>Book {r.name}</h3>
+        <div className="booking-title">
+          <h3>Book {r.name}</h3>
+          {cancel("table")}
+        </div>
         <Row label="When">
           Tonight, {p.time} · {p.party} people
         </Row>
@@ -394,10 +489,13 @@ export function Card({
   if (m.card === "bookingSuccess")
     return (
       <section className={`card ${!s.booked ? "obsolete" : ""}`}>
-        <span className="success-tag">
-          <Check size={13} />
-          {s.booked ? "Table booked" : "Booking cancelled"}
-        </span>
+        <div className="booking-title">
+          <span className="success-tag">
+            <Check size={13} />
+            {s.booked ? "Table booked" : "Booking cancelled"}
+          </span>
+          {cancel("table")}
+        </div>
         <Row label="Restaurant">
           {r.name}
           <br />
@@ -502,7 +600,10 @@ export function Card({
   if (m.card === "rideType")
     return (
       <section className="card">
-        <h3>Ride to {r.name}</h3>
+        <div className="booking-title">
+          <h3>Ride to {r.name}</h3>
+          {cancel("ride")}
+        </div>
         <p className="footnote">
           From your hotel · leave {rr.leave} · about {rr.minutes} min
         </p>
@@ -555,9 +656,14 @@ export function Card({
         {[0, 1].map((i) => (
           <section className="card car-offer" key={i}>
             <div>
-              <h3>
-                {i ? "“Easy pickup, friendly driver”" : "“Quiet car, A/C on”"}
-              </h3>
+              <div className="booking-title">
+                <h3>
+                  {i ? "“Easy pickup, friendly driver”" : "“Quiet car, A/C on”"}
+                </h3>
+                {s.step === "calling" && s.carIndex === i
+                  ? cancel("ride")
+                  : null}
+              </div>
               {i === 0 && <span className="success-tag">Best match</span>}
               <p className="footnote">
                 {i ? "0.5 km · 3 min away" : "0.3 km · 2 min away"} ·{" "}
@@ -588,7 +694,12 @@ export function Card({
     return (
       <section className={`card ${!s.rideBooked ? "obsolete" : ""}`}>
         <RouteMap distance={rr.distance} />
-        <h3>{s.rideBooked ? "Driver arriving in 4 min" : "Ride cancelled"}</h3>
+        <div className="booking-title">
+          <h3>
+            {s.rideBooked ? "Driver arriving in 4 min" : "Ride cancelled"}
+          </h3>
+          {cancel("ride")}
+        </div>
         <p className="footnote">
           Pickup at your hotel lobby · arrive ~{rr.arrive}
         </p>

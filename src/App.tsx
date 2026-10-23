@@ -8,7 +8,7 @@ import {
 import { Play, Pause, RotateCcw, ArrowRight, UserRound } from "lucide-react";
 import { useChat } from "./engine/useChat";
 import { intent, parsePlan } from "./engine/intents";
-import { type Role } from "./engine/script";
+import { demoIds, type Demo, type Role } from "./engine/script";
 import { Pal } from "./components/Pal";
 import { NavBar, StatusBar, InputBar } from "./components/Chrome";
 import { Card, type Sheet } from "./components/Cards";
@@ -75,11 +75,13 @@ export default function App() {
             "Built for the Tencent design challenge.",
           ],
         };
-  const initialFlow =
-    new URLSearchParams(location.search).get("flow") === "exception"
-      ? "exception"
-      : "normal";
-  const { state: s, dispatch } = useChat(initialFlow),
+  const queryDemo =
+    new URLSearchParams(location.search).get("flow") || "normal";
+  const initialDemo: Demo = demoIds.includes(queryDemo as Demo)
+    ? (queryDemo as Demo)
+    : "normal";
+  const [demoRun, setDemoRun] = useState(0);
+  const { state: s, dispatch } = useChat(initialDemo),
     [started, setStarted] = useState(
       new URLSearchParams(location.search).has("flow"),
     ),
@@ -108,8 +110,9 @@ export default function App() {
     window.addEventListener("keydown", listener);
     return () => window.removeEventListener("keydown", listener);
   }, []);
-  function begin(flow: "normal" | "exception") {
-    dispatch({ type: "RESET", value: flow });
+  function begin(flow: Demo) {
+    dispatch({ type: "DEMO", value: flow });
+    setDemoRun((n) => n + 1);
     setStarted(true);
     setProfile(false);
     setSheet(null);
@@ -138,29 +141,43 @@ export default function App() {
       });
       return;
     }
-    if (s.step === "exception") {
-      if (i === "later") {
-        dispatch({ type: "CHOOSE_A", value: text });
-        return;
-      }
-      if (i === "another") {
-        dispatch({ type: "CHOOSE_B", value: text });
-        return;
-      }
-      if (i === "customize") {
-        setSheet({ type: "edit", value: { prefill: parsePlan(text) } });
-        return;
-      }
+    if (s.decision && /^(yes|no)[.!]?$/i.test(text.trim())) {
+      const no = /^no/i.test(text.trim());
+      const draft = s.decision.draft;
+      dispatch({
+        type: no ? "DECISION_NO" : "DECISION_YES",
+        value: s.decision.id,
+      });
+      if (no && draft) setSheet({ type: "edit", value: { prefill: draft } });
+      return;
+    }
+    if (
+      s.askAboutRide &&
+      /^(yes|no(?:,? keep the ride)?)[.!]?$/i.test(text.trim())
+    ) {
+      dispatch({
+        type: /^yes/i.test(text) ? "CANCEL_PROMPT" : "KEEP_RIDE",
+        value: "ride",
+      });
+      return;
+    }
+    if (i === "customize" && !/cheaper|closer/i.test(text) && !s.booked) {
+      setSheet({
+        type: "edit",
+        value: { prefill: { ...s.editDraft, ...parsePlan(text) } },
+      });
+      return;
     }
     if (s.step === "denied") {
       setSheet({ type: "address" });
       return;
     }
-    dispatch({ type: "TEXT", value: text });
+    dispatch({ type: "INTERPRET", value: text });
   }
   const activeReaction = [
     "checkingCancel",
     "cancelling",
+    "readingChoice",
     "reading",
     "lining",
     "bookingWork",
@@ -225,20 +242,39 @@ export default function App() {
           </div>
           <div className="demo-controls">
             <span className="eyebrow">{intro.prototype}</span>
-            <button
-              className={s.flow === "normal" && started ? "chosen" : ""}
-              onClick={() => begin("normal")}
-            >
-              {intro.normal} <ArrowRight size={16} />
-            </button>
-            <button
-              className={s.flow === "exception" && started ? "chosen" : ""}
-              onClick={() => begin("exception")}
-            >
-              {intro.exception} <ArrowRight size={16} />
-            </button>
+            {demoIds.map((demo, i) => (
+              <button
+                key={demo}
+                className={s.demo === demo && started ? "chosen" : ""}
+                onClick={() => begin(demo)}
+              >
+                <span>
+                  {["①", "②", "③", "④", "⑤", "⑥", "⑦"][i]}{" "}
+                  {introLanguage === "zh"
+                    ? [
+                        "正常流程",
+                        "异常 · 晚上 7 点满座",
+                        "输入取消出行",
+                        "按钮取消全部",
+                        "用自己的话决定",
+                        "模糊回复 → 是／否",
+                        "Pal 工作中取消",
+                      ][i]
+                    : [
+                        "Normal flow",
+                        "Exception · 7:00 PM full",
+                        "Cancel the ride (typed)",
+                        "Cancel all (button)",
+                        "Decide in your own words",
+                        "Vague reply → Yes / No",
+                        "Cancel while a Pal is working",
+                      ][i]}
+                </span>
+                <ArrowRight size={16} />
+              </button>
+            ))}
             <div className="control-row">
-              <button onClick={() => begin(s.flow)}>
+              <button onClick={() => begin(s.demo || s.flow)}>
                 <RotateCcw size={14} />
                 {intro.restart}
               </button>
@@ -452,20 +488,20 @@ export default function App() {
                               dispatch({ type: "CANCEL_PROMPT", value: "ride" })
                             }
                           >
-                            Cancel ride too
+                            Yes
                           </button>
                           <button
                             className="chip"
                             onClick={() => dispatch({ type: "KEEP_RIDE" })}
                           >
-                            Keep the ride
+                            No, keep the ride
                           </button>
                         </div>
                       )}
                     </div>
                   </div>
                   <InputBar
-                    key={`${s.flow}-${started}`}
+                    key={`${s.demo}-${started}-${demoRun}`}
                     s={s}
                     onSend={send}
                     onAdd={() => setSheet({ type: "actions" })}
@@ -497,7 +533,7 @@ export default function App() {
             >
               Flows
             </button>
-            <button onClick={() => begin(s.flow)}>Restart</button>
+            <button onClick={() => begin(s.demo || s.flow)}>Restart</button>
             <button onClick={() => dispatch({ type: "PAUSE" })}>
               {s.paused ? "Resume" : "Pause"}
             </button>

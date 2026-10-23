@@ -75,7 +75,7 @@ export function Sheets({
   const submit = () => {
     if (sheet.type === "edit") {
       dispatch({
-        type: sheet.value === "request" ? "EDIT_REQUEST" : "CUSTOMIZE",
+        type: sheet.value === "request" ? "EDIT_REQUEST" : "PROPOSE_CUSTOM",
         value: draft,
       });
     } else
@@ -269,17 +269,21 @@ export function Sheets({
                   <span />
                 </button>
               </div>
-              <Button disabled={!changed || draft.budget < 50} onClick={submit}>
-                {sheet.value === "request"
-                  ? `Update request · ${changes.join(" · ") || draft.time}`
-                  : `Update · ${draft.cuisine} at ${draft.time}${changes
-                      .filter(
-                        (change) =>
-                          change !== draft.time && change !== draft.cuisine,
-                      )
-                      .map((change) => ` · ${change}`)
-                      .join("")}`}
-              </Button>
+              {sheet.value !== "request" && (
+                <div className="anything-else">
+                  <label htmlFor="preferences">Anything else?</label>
+                  <textarea
+                    id="preferences"
+                    rows={2}
+                    placeholder="Somewhere quiet, near the Bund"
+                    value={draft.preferences || ""}
+                    onChange={(e) =>
+                      setDraft({ ...draft, preferences: e.target.value })
+                    }
+                  />
+                  <small>Tell Main Pal anything the options don't cover.</small>
+                </div>
+              )}
             </>
           )}
           {sheet.type === "who" && (
@@ -462,6 +466,21 @@ export function Sheets({
             </>
           )}
         </div>
+        {sheet.type === "edit" && (
+          <div className="sheet-footer">
+            {" "}
+            <Button
+              disabled={
+                (sheet.value === "request" && !changed) || draft.budget < 50
+              }
+              onClick={submit}
+            >
+              {sheet.value === "request"
+                ? `Update request · ${changes.join(" · ") || draft.time}`
+                : "Search with these changes"}
+            </Button>
+          </div>
+        )}
       </motion.div>
     </motion.div>
   );

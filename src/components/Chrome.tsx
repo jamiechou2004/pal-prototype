@@ -130,6 +130,13 @@ export function InputBar({
   const [seconds, setSeconds] = useState(0);
   const [hint, setHint] = useState("");
   const input = useRef<HTMLTextAreaElement>(null);
+  useEffect(() => {
+    if (s.inputFocusVersion) {
+      if (s.inputPrefill) setText(s.inputPrefill);
+      setTyping(true);
+      input.current?.focus();
+    }
+  }, [s.inputFocusVersion]);
   const recognizer = useRef<any>(null);
   const transcript = useRef("");
   const recordingRef = useRef(false);
@@ -291,7 +298,11 @@ export function InputBar({
                     : 1
                 }
                 aria-label="Message Main Pal"
-                placeholder="Message Main Pal"
+                placeholder={
+                  s.clarifying
+                    ? "Tell Main Pal what you meant…"
+                    : "Message Main Pal"
+                }
                 onFocus={() => {
                   setTyping(true);
                   if (s.step === "welcome" && !text) setText(initialRequest);

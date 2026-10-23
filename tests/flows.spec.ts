@@ -89,6 +89,10 @@ test("exception A via natural language, outdated estimate and explicit confirmat
   await p.getByRole("textbox", { name: "Message Main Pal" }).fill("8 is fine");
   await p.getByRole("button", { name: "Send message" }).click();
   await skip(p);
+  await p
+    .getByRole("button", { name: "Yes, book 8:00 PM", exact: true })
+    .click();
+  await skip(p);
   await expect(
     p.getByRole("button", { name: "Book table for 8:00 PM" }),
   ).toBeEnabled();
@@ -132,9 +136,9 @@ test("exception custom Cantonese and cancel everything", async ({
   await exception(p);
   await p.getByRole("button", { name: "Customize", exact: true }).click();
   await p.getByRole("button", { name: "Cantonese", exact: true }).click();
-  await p
-    .getByRole("button", { name: "Update · Cantonese at 7:00 PM" })
-    .click();
+  await p.getByRole("button", { name: "Search with these changes" }).click();
+  await skip(p);
+  await p.getByRole("button", { name: "Yes, search", exact: true }).click();
   await skip(p);
   await p
     .locator('[data-message="carousel"]')

@@ -1,3 +1,4 @@
+import { inferDecision, customDecision, type Decision } from "./decisions";
 import { useEffect, useReducer } from "react";
 import {
   initial,
@@ -9,9 +10,14 @@ import {
   type CardKind,
   type Role,
   type Step,
+  type Demo,
+  initialRequest,
 } from "./script";
 export function reducer(state: State, a: Action): State {
   if (a.type === "RESET") return initial(a.value);
+  if (a.type === "DEMO") return demoState(a.value);
+  if (a.type === "STOP_RESULT" && state.step === "stopping")
+    return reducer(state, { type: "TICK", value: a.value });
   const s: State = {
     ...state,
     messages: [...state.messages],
@@ -104,7 +110,9 @@ export function reducer(state: State, a: Action): State {
         (s.tableOutcome === "cancelled"
           ? "✓ Cancelled by Dining Pal"
           : s.tableOutcome === "stopped"
-            ? "— Not started"
+            ? s.stoppedDuringBooking?.table
+              ? "✓ Stopped by Dining Pal"
+              : "— Not started"
             : s.booked
               ? tag === "All confirmed"
                 ? "✓ Table booked"
@@ -115,7 +123,9 @@ export function reducer(state: State, a: Action): State {
         (s.rideOutcome === "cancelled"
           ? "✓ Cancelled by Mobility Pal"
           : s.rideOutcome === "stopped" || !s.plan.ride
-            ? "— Not started, nothing to cancel"
+            ? s.stoppedDuringBooking?.ride
+              ? "✓ Stopped by Mobility Pal"
+              : "— Not started, nothing to cancel"
             : s.rideBooked
               ? "✓ Driver on the way"
               : "— Not started"),
@@ -158,17 +168,19 @@ export function reducer(state: State, a: Action): State {
     };
     msg(
       "main",
-      table && ride
-        ? hadTable && hadRide
-          ? "Done — your table and your ride are both cancelled. Want me to find something else for tonight?"
-          : "Done — dinner and ride planning have stopped. Any confirmed booking has been cancelled."
-        : ride
-          ? hadRide
-            ? `Your ride is cancelled.${s.booked ? " Your table stays." : s.tableOutcome ? "" : " Dining can continue."}`
-            : `Got it — no ride. The car was never called, so there's nothing to cancel. ${s.booked ? "Your table stays." : "Dining can continue."}`
-          : hadTable
-            ? "Your table is cancelled."
-            : "Dining planning has stopped. No table was booked.",
+      s.stoppedDuringBooking?.ride && !table
+        ? `Done — Mobility Pal stopped before any driver was assigned.${s.booked ? ` Your table at ${s.plan.time} stays.` : " Dining can continue."}`
+        : table && ride
+          ? hadTable && hadRide
+            ? "Done — your table and your ride are both cancelled. Want me to find something else for tonight?"
+            : "Done — dinner and ride planning have stopped. Any confirmed booking has been cancelled."
+          : ride
+            ? hadRide
+              ? `Your ride is cancelled.${s.booked ? " Your table stays." : s.tableOutcome ? "" : " Dining can continue."}`
+              : `Got it — no ride. The car was never called, so there's nothing to cancel. ${s.booked ? "Your table stays." : "Dining can continue."}`
+            : hadTable
+              ? "Your table is cancelled."
+              : "Dining planning has stopped. No table was booked.",
     );
     s.cancelPrompt = undefined;
     s.cancelStage = undefined;
@@ -204,10 +216,83 @@ export function reducer(state: State, a: Action): State {
     if (s.askAboutRide)
       msg(
         "main",
-        `Your ride is still going to ${s.restaurant.name}. Cancel it too, or keep it?`,
+        `Your ride is still ${s.rideBooked ? "going to" : "planned for"} ${s.restaurant.name}. Cancel it too?`,
       );
   };
+  const propose = (decision: Decision, echo: string) => {
+    msg("alex", echo);
+    s.inputPrefill = undefined;
+    s.clarifying = false;
+    s.choiceResume = s.step;
+    s.choicePending = s.pending;
+    s.decision = decision;
+    s.thinking = "Reading your choice…";
+    wait("readingChoice", 1000);
+  };
+  const clarify = () => {
+    s.clarifying = true;
+    s.inputFocusVersion = (s.inputFocusVersion || 0) + 1;
+    msg(
+      "main",
+      "No problem. What did you have in mind? Tap one, or just type it.",
+    );
+    card("clarify");
+  };
   switch (a.type) {
+    case "INTERPRET": {
+      if (s.step === "readingChoice" || s.cancelPrompt) return state;
+      s.decision = undefined;
+      const decision = inferDecision(s, a.value);
+      if (decision) propose(decision, a.value);
+      else {
+        msg("alex", a.value);
+        clarify();
+      }
+      break;
+    }
+    case "PROPOSE_CUSTOM": {
+      if (s.booked || s.rideBooked) {
+        msg(
+          "main",
+          "Cancel the existing booking before searching for a new plan.",
+        );
+        break;
+      }
+      s.editDraft = { ...a.value, preferences: a.value.preferences?.trim() };
+      const d = s.editDraft!;
+      propose(
+        customDecision(s, d),
+        `${d.cuisine} · ${d.time} · ${d.party} people${d.preferences ? ` · "${d.preferences}"` : ""}`,
+      );
+      break;
+    }
+    case "DECISION_YES": {
+      if (
+        !s.decision ||
+        s.decision.id !== a.value ||
+        s.step === "readingChoice"
+      )
+        return state;
+      const decision = s.decision;
+      s.decision = undefined;
+      s.clarifying = false;
+      s.editDraft = undefined;
+      msg("alex", decision.label);
+      return reducer(s, { ...decision.action, acknowledged: true });
+    }
+    case "DECISION_NO":
+      if (!s.decision || s.decision.id !== a.value) return state;
+      msg("alex", "No");
+      s.editDraft = s.decision.draft;
+      s.decision = undefined;
+      clarify();
+      break;
+    case "ACK_PLAN":
+      msg("main", "Kept your plan as it is.");
+      break;
+    case "CONFIRMED_CAR_TYPE":
+      s.carType = a.value;
+      return reducer(s, { type: "CONFIRM_TYPE", acknowledged: true });
     case "PAUSE":
       s.paused = !s.paused;
       return s;
@@ -319,7 +404,8 @@ export function reducer(state: State, a: Action): State {
       break;
     case "CHOOSE_A":
       if (s.step !== "exception") return state;
-      msg("alex", a.value || "Take 8:00 PM");
+      s.clarifying = false;
+      if (!a.acknowledged) msg("alex", a.value || "Take 8:00 PM");
       s.plan.time = "8:00 PM";
       s.updateNote = "Plan updated from 7:00 PM to 8:00 PM";
       s.exceptionResolved = true;
@@ -346,7 +432,8 @@ export function reducer(state: State, a: Action): State {
       break;
     case "CHOOSE_B":
       if (s.step !== "exception") return state;
-      msg("alex", a.value || "Keep 7:00 PM");
+      s.clarifying = false;
+      if (!a.acknowledged) msg("alex", a.value || "Keep 7:00 PM");
       s.exceptionResolved = true;
       msg(
         "main",
@@ -356,20 +443,28 @@ export function reducer(state: State, a: Action): State {
       find(1);
       break;
     case "CUSTOMIZE":
-      if (!["exception", "restaurants", "request"].includes(s.step))
+      if (
+        !["exception", "restaurants", "request", "booking", "updated"].includes(
+          s.step,
+        )
+      )
         return state;
+      const fromRequest = s.step === "request";
+      s.clarifying = false;
       Object.assign(s.plan, a.value);
       if (s.exceptionRestaurant)
         s.updateNote = `Changed to ${s.plan.cuisine} — ${s.exceptionRestaurant} was full at 7:00 PM`;
       s.exceptionResolved = true;
-      msg(
-        "alex",
-        `Change to ${s.plan.cuisine}, ${s.plan.time}, under ¥${s.plan.budget}`,
-      );
+      if (!a.acknowledged)
+        msg(
+          "alex",
+          `Change to ${s.plan.cuisine}, ${s.plan.time}, under ¥${s.plan.budget}`,
+        );
       msg(
         "main",
         `Got it — ${s.plan.cuisine} at ${s.plan.time}. I'll look for matching places; nothing is booked yet.`,
       );
+      if (fromRequest) return reducer(s, { type: "APPROVE_REQUEST" });
       find(s.plan.cuisine === "Cantonese" ? 2 : 1);
       break;
     case "CONTACT":
@@ -406,13 +501,17 @@ export function reducer(state: State, a: Action): State {
       if (
         s.cancelPrompt ||
         s.step === "cancelling" ||
-        s.step === "checkingCancel"
+        s.step === "checkingCancel" ||
+        s.step === "stopping"
       )
         return state;
       const target =
         typeof a.value === "object" ? a.value.target : a.value || "pick";
       const text = typeof a.value === "object" ? a.value.text : undefined;
       if (text) msg("alex", text);
+      s.decision = undefined;
+      s.clarifying = false;
+      s.cancelFromCard = typeof a.value === "object" && !!a.value.fromCard;
       const table =
         !s.tableOutcome &&
         (s.booked || !["welcome", "complete"].includes(s.step));
@@ -431,9 +530,33 @@ export function reducer(state: State, a: Action): State {
       s.resumePending = s.pending;
       s.pending = undefined;
       s.thinking = "";
+      const midTable = !!s.cancelSelection.table && s.step === "bookingWork";
+      const midRide = !!s.cancelSelection.ride && s.step === "calling";
       const undo =
-        (s.cancelSelection.table && (s.booked || s.step === "bookingWork")) ||
-        (s.cancelSelection.ride && (s.rideBooked || s.step === "calling"));
+        (s.cancelSelection.table && s.booked) ||
+        (s.cancelSelection.ride && s.rideBooked);
+      if ((midTable || midRide) && !undo) {
+        s.stoppedDuringBooking = { table: midTable, ride: midRide };
+        s.cancelStage = undefined;
+        if (!text) msg("alex", midTable ? "Cancel table" : "Cancel ride");
+        work(
+          midTable ? "dining" : "mobility",
+          `${midTable ? "Dining" : "Mobility"} Pal · Stopping…`,
+        );
+        msg(
+          "main",
+          midTable
+            ? "Dining Pal is still booking — I'll stop it."
+            : "Mobility Pal is in the middle of booking. I've asked it to stop — one moment.",
+        );
+        summary(
+          "Updating",
+          midTable ? "Stopping…" : undefined,
+          midRide ? "Stopping…" : undefined,
+        );
+        wait("stopping", 1800);
+        break;
+      }
       if (
         target !== "pick" &&
         !s.cancelSelection.table &&
@@ -442,7 +565,7 @@ export function reducer(state: State, a: Action): State {
         s.cancelPrompt = undefined;
         s.pending = s.resumePending;
         msg("main", "That task is already stopped or cancelled.");
-      } else if (target !== "pick" && !undo) {
+      } else if (target !== "pick" && !undo && !s.cancelFromCard) {
         if (!text)
           msg(
             "alex",
@@ -469,7 +592,7 @@ export function reducer(state: State, a: Action): State {
           (s.booked || s.resumeStep === "bookingWork")) ||
         (s.cancelSelection.ride &&
           (s.rideBooked || s.resumeStep === "calling"));
-      if (undo) s.cancelStage = "confirm";
+      if (undo || s.cancelFromCard) s.cancelStage = "confirm";
       else {
         s.cancelStage = undefined;
         msg(
@@ -502,6 +625,11 @@ export function reducer(state: State, a: Action): State {
       s.askAboutRide = false;
       msg("alex", "Keep the ride");
       msg("main", `Your ride to ${s.restaurant.name} is kept.`);
+      if (!s.rideBooked && s.plan.ride && s.step === "complete") {
+        s.step = "rideType";
+        s.tasks.mobility = "Waiting for you";
+        card("rideType");
+      }
       break;
     case "CANCEL_CONFIRM": {
       if (!s.cancelPrompt || s.cancelStage !== "confirm") return state;
@@ -530,9 +658,11 @@ export function reducer(state: State, a: Action): State {
             : "Cancelling ride",
         table && ride,
       );
-      s.cancelWaitForBooking =
-        (table && s.resumeStep === "bookingWork") ||
-        (ride && s.resumeStep === "calling");
+      s.stoppedDuringBooking = {
+        table: table && s.resumeStep === "bookingWork",
+        ride: ride && s.resumeStep === "calling",
+      };
+      s.cancelWaitForBooking = false;
       msg(
         "main",
         table && ride
@@ -727,23 +857,49 @@ export function reducer(state: State, a: Action): State {
           );
           summary(s.tableOutcome ? "Updated" : "All confirmed");
           break;
+        case "stopping":
+          if (a.value === "booked") {
+            const selected = s.cancelSelection!;
+            if (selected.table) s.booked = true;
+            if (selected.ride) s.rideBooked = true;
+            s.stoppedDuringBooking = undefined;
+            s.messages = s.messages.filter((m) => m.planTag !== "Updating");
+            s.cancelPrompt = undefined;
+            s.step = selected.ride ? "rideBooked" : "booked";
+            s.pending = { id: s.seq++, ms: 1400 };
+            msg("event", "Message from", selected.ride ? "mobility" : "dining");
+            msg(
+              "main",
+              "The booking completed before the stop request arrived. Please confirm before I cancel the confirmed booking.",
+            );
+            return reducer(s, {
+              type: "CANCEL_PROMPT",
+              value: {
+                target:
+                  selected.table && selected.ride
+                    ? "all"
+                    : selected.table
+                      ? "table"
+                      : "ride",
+                fromCard: true,
+              },
+            });
+          }
+          finishCancellation();
+          break;
+        case "readingChoice":
+          s.step = s.choiceResume || "exception";
+          s.pending = s.choicePending;
+          s.choicePending = undefined;
+          s.choiceResume = undefined;
+          if (s.decision) {
+            msg("main", s.decision.question);
+            s.decision = { ...s.decision, id: s.seq };
+            card("decision", { decision: s.decision });
+          }
+          break;
         case "checkingCancel":
         case "cancelling": {
-          // A booking in flight resolves before its cancellation request is sent.
-          if (s.cancelWaitForBooking) {
-            const selected = s.cancelSelection!;
-            if (selected.table && s.resumeStep === "bookingWork")
-              s.booked = !(
-                s.flow === "exception" &&
-                !s.exceptionResolved &&
-                s.plan.time === "7:00 PM"
-              );
-            if (selected.ride && s.resumeStep === "calling")
-              s.rideBooked = true;
-            s.cancelWaitForBooking = false;
-            wait("cancelling", 1600);
-            break;
-          }
           finishCancellation();
           break;
         }
@@ -757,8 +913,58 @@ export function reducer(state: State, a: Action): State {
   }
   return s;
 }
-export function useChat(flow: "normal" | "exception") {
-  const [state, dispatch] = useReducer(reducer, flow, initial);
+export function demoState(demo: Demo): State {
+  const flow = ["exception", "decide", "vague"].includes(demo)
+    ? "exception"
+    : "normal";
+  let s = initial(flow);
+  s.demo = demo;
+  if (demo === "normal" || demo === "exception") return s;
+  const apply = (type: string, value?: any) => {
+    s = reducer(s, { type, value });
+  };
+  apply("SEND_REQUEST", { text: initialRequest, plan: {} });
+  apply("TICK");
+  apply("APPROVE_REQUEST");
+  apply("PERMISSION", "tonight");
+  apply("TICK");
+  apply("SELECT_RESTAURANT", restaurants[0]);
+  apply("TICK");
+  apply("BOOK");
+  apply("TICK");
+  if (demo === "decide") {
+    s.inputPrefill = "A is fine";
+    s.inputFocusVersion = 1;
+    return s;
+  }
+  if (demo === "vague") {
+    apply("INTERPRET", "ok");
+    return s;
+  }
+  apply("TICK");
+  if (demo === "cancel-ride") {
+    apply("CANCEL_PROMPT", {
+      target: "ride",
+      text: "Actually I'll walk. Cancel the ride, keep the table.",
+    });
+    return s;
+  }
+  apply("CONFIRM_TYPE");
+  apply("TICK");
+  apply("CALL_CAR", 0);
+  if (demo === "stopping") {
+    apply("CANCEL_PROMPT", {
+      target: "ride",
+      text: "Wait — cancel the ride, I'll walk.",
+    });
+    return s;
+  }
+  apply("TICK");
+  apply("TICK");
+  return s;
+}
+export function useChat(demo: Demo) {
+  const [state, dispatch] = useReducer(reducer, demo, demoState);
   useEffect(() => {
     if (!state.pending || state.paused) return;
     const t = setTimeout(() => dispatch({ type: "TICK" }), state.pending.ms);

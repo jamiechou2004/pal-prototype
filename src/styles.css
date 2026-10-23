@@ -1972,3 +1972,240 @@ mark {
     animation: none;
   }
 }
+/* Additional refine-2 requirements: keep accent artwork vivid, text controls accessible. */
+.primary,
+.send,
+.record-send,
+.cancel-check.checked {
+  background: var(--green-700);
+  color: white;
+}
+.primary:active:not(:disabled) {
+  background: #056432;
+}
+.cancel-check.checked {
+  border-color: var(--green-700);
+}
+.main-bubble {
+  background: var(--bg-secondary);
+}
+.restaurant-card {
+  flex-basis: 370px;
+  padding: 20px;
+  gap: 12px;
+  box-shadow: 0 4px 10px #0000000f;
+}
+.restaurant-photo {
+  height: 96px;
+}
+.recommend-badge {
+  top: 30px;
+  left: 30px;
+  border: 0;
+  border-radius: 14px;
+  background: #ffffffe6;
+  line-height: 16px;
+  box-shadow: 0 4px 16px #00000014;
+}
+.restaurant-card h3 {
+  line-height: 28px;
+}
+.restaurant-card > .muted {
+  font-size: 17px;
+  line-height: 26px;
+  letter-spacing: -0.68px;
+}
+.recommend-why {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  margin: 0;
+  border-radius: 14px;
+  background: var(--accent-subtle);
+}
+.recommend-why > div {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 2px;
+  min-width: 0;
+}
+.recommend-why strong {
+  color: var(--text-accent);
+  font-size: 12px;
+  line-height: 16px;
+  white-space: nowrap;
+}
+.recommend-why p {
+  margin: 0;
+  color: var(--text-primary);
+  font-size: 13px;
+  line-height: 18px;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+.restaurant-card .tags {
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.restaurant-card .tags > span {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  border: 0;
+  border-radius: 6px;
+  background: var(--bg-secondary);
+  color: var(--text-secondary);
+  height: 30px;
+  padding: 0 10px;
+}
+.restaurant-card .trip-row {
+  padding: 8px 8px 8px 16px;
+  gap: 12px;
+}
+.restaurant-card .button-row {
+  margin-top: auto;
+}
+.booking-title {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+.booking-title h3 {
+  min-width: 0;
+}
+.booking-cancel {
+  color: var(--error-text);
+  font-size: 15px;
+  font-weight: 600;
+  line-height: 20px;
+  min-width: 44px;
+  min-height: 44px;
+  flex-shrink: 0;
+  padding: 0;
+}
+.booking-cancel:disabled {
+  opacity: 1;
+}
+/* Opacity on the parent would dim Cancel as well. Dim only answered content. */
+.answered-card {
+  opacity: 1 !important;
+}
+.answered-card .card > :not(.booking-title):not(.booking-cancel),
+.answered-card .booking-title > :not(.booking-cancel),
+.answered-card .carousel-wrap {
+  opacity: 0.55;
+}
+.quick-replies {
+  display: flex;
+  gap: 8px;
+}
+.quick-replies .button {
+  flex: 1;
+  min-width: 0;
+  padding: 0 8px;
+  font-size: 15px;
+  white-space: nowrap;
+}
+.quick-replies.answered {
+  opacity: 0.55;
+}
+.anything-else {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  border-top: 1px solid var(--border-default);
+  padding-top: 12px;
+}
+.anything-else textarea {
+  background: var(--bg-secondary);
+  border: 1px solid transparent;
+  border-radius: 14px;
+  padding: 12px 14px;
+  width: 100%;
+  resize: vertical;
+  font-size: 17px;
+  line-height: 24px;
+}
+.anything-else textarea:focus {
+  outline: 2px solid var(--green-700);
+  outline-offset: 0;
+}
+.desktop-intro > .eyebrow {
+  margin-top: 24px;
+}
+.intro-pals {
+  margin: 16px 0;
+}
+.demo-controls {
+  padding-top: 16px;
+}
+.demo-controls > button {
+  padding: 8px 12px;
+  margin: 2px 0;
+}
+.demo-note {
+  margin-top: 16px;
+}
+@media (max-width: 760px) {
+  .restaurant-card {
+    flex-basis: min(370px, calc(100vw - 32px));
+  }
+}
+@media (min-width: 761px) and (max-height: 1000px) {
+  .desktop-intro .wordmark {
+    font-size: 48px;
+  }
+  .desktop-intro > .eyebrow {
+    margin: 16px 0 10px;
+  }
+  .desktop-intro h1 {
+    font-size: 36px;
+  }
+  .intro-copy {
+    font-size: 14px;
+    line-height: 20px;
+    margin-top: 12px;
+  }
+  .intro-pals {
+    margin: 8px 0;
+    height: 40px;
+  }
+  .intro-pals .pal {
+    transform: scale(0.75);
+    transform-origin: left center;
+    margin-right: -8px;
+  }
+  .demo-controls {
+    padding-top: 12px;
+  }
+  .demo-controls > .eyebrow {
+    margin-bottom: 6px;
+  }
+  .demo-controls > button {
+    padding: 6px 10px;
+    font-size: 13px;
+  }
+  .control-row {
+    margin-top: 6px;
+  }
+  .demo-note {
+    margin-top: 10px;
+  }
+}
+
+.recommend-pal {
+  flex-shrink: 0;
+}
+
+.sheet-footer {
+  flex: none;
+  padding-top: 16px;
+  background: var(--bg-primary);
+}
+.sheet-footer .button {
+  width: 100%;
+}

@@ -33,7 +33,11 @@ test("ride cancellation preserves pending 8 PM confirmation and dinner completio
   );
   await p.getByRole("textbox", { name: "Message Main Pal" }).fill("8 is fine");
   await p.getByRole("button", { name: "Send message" }).click();
-  await expect(p.getByText(/Got it — 8:00 PM.*7:35 PM/)).toBeVisible();
+  await skip(p);
+  await p
+    .getByRole("button", { name: "Yes, book 8:00 PM", exact: true })
+    .click();
+  await expect(p.getByText(/Got it — 8:00 PM.*7:35 PM/).last()).toBeVisible();
   await expect(p.locator(".working-slot")).toHaveCount(2);
   await skip(p);
   await p

@@ -17,10 +17,15 @@ export function TonightPlan({
   const car = `${m.carIndex ? "Silver" : "White"} sedan ${m.carIndex ? "沪A · F1932" : "沪A · D2817"}`;
   const tableCancelled = m.tableStatus?.includes("Cancelled");
   const rideCancelled = m.rideStatus?.includes("Cancelled");
+  const notStarted = m.rideStatus === "— Not started";
+  const stopping = m.rideStatus === "Stopping…";
+  const stoppedBooking = m.rideStatus?.includes("Stopped by");
   const stopped = m.rideStatus?.includes("nothing to cancel");
   const status = (text?: string) => (
     <span className={`plan-status ${text?.startsWith("—") ? "muted" : ""}`}>
-      {text === "Cancelling…" && <LoaderCircle className="spin" size={13} />}
+      {["Cancelling…", "Stopping…"].includes(text || "") && (
+        <LoaderCircle className="spin" size={13} />
+      )}
       {text}
     </span>
   );
@@ -56,18 +61,30 @@ export function TonightPlan({
         </div>
         <div>
           <strong>
-            {rideCancelled
-              ? "Ride cancelled"
-              : stopped
-                ? "Ride · not needed"
-                : `Ride · pickup ${route(r, p).leave}`}
+            {stopping
+              ? "Ride · stopping…"
+              : notStarted
+                ? "Ride · not booked"
+                : rideCancelled
+                  ? "Ride cancelled"
+                  : stoppedBooking
+                    ? "Ride · stopped while booking"
+                    : stopped
+                      ? "Ride · not needed"
+                      : `Ride · pickup ${route(r, p).leave}`}
           </strong>
           <p>
-            {rideCancelled
-              ? car
-              : stopped
-                ? "Stopped before booking"
-                : `Hotel lobby → ${r.name} · ${car}`}
+            {stopping
+              ? "Waiting for Mobility Pal"
+              : notStarted
+                ? "No car has been called"
+                : rideCancelled
+                  ? car
+                  : stoppedBooking
+                    ? "No driver was assigned"
+                    : stopped
+                      ? "Stopped before booking"
+                      : `Hotel lobby → ${r.name} · ${car}`}
           </p>
           {status(m.rideStatus)}
         </div>

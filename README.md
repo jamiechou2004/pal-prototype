@@ -43,9 +43,15 @@ Cancelling the ride preserves pending dinner confirmations and restores dinner p
 
 Location permission comes immediately after Looks good, with Allow for tonight, Allow once, and Don't allow. Refusal still starts Dining; Mobility waits for a manually provided pickup or can be skipped.
 
-All nine restaurant cards explain the recommendation. Normal and exception flows finish with a dynamic Tonight's plan card and the relevant change note. Cancel… remains available while a task is active. The task picker and alert preserve selection on Go back, report each Pal separately, and ask about an active ride after table cancellation. In-flight bookings resolve before undoing the returned reservation. Stopping an unbooked ride preserves pending dinner work.
+All nine restaurant cards explain the recommendation. Normal and exception flows finish with a dynamic Tonight's plan card and the relevant change note. Cancel… remains available while a task is active. The task picker and alert preserve selection on Go back, report each Pal separately, and ask about an active ride after table cancellation. In-flight bookings show Stopping and normally stop before assignment. A late booking-success response reopens the picker and requires confirmation before undoing it. Stopping an unbooked ride preserves pending dinner work.
 
 Only the desktop introduction and demo controls toggle English/Chinese. The phone UI and conversation remain English.
+
+## Additional refine-2 requirements
+
+The seven desktop entries each start the relevant scenario; deep links use `?flow=normal`, `exception`, `cancel-ride`, `cancel-all`, `decide`, `vague`, or `stopping`. Natural-language choices are scripted, context-aware interpretations followed by Yes/No confirmation, not a live language-model integration. Custom preferences are retained and echoed for confirmation; they accompany the illustrative catalogue search rather than querying live restaurants.
+
+Recommendation cards follow the 370 px component, including the 96 px photo, SVG info tags, two-line explanation and dark-green actions. Each booking card has a task-scoped Cancel shortcut that remains opaque while answered content dims. Customize includes Anything else?, and No preserves the draft. White-on-green text controls use #067A3E; the character artwork and activity rings retain the vivid accent.
 
 ## Prototype boundaries
 

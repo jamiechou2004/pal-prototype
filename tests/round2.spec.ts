@@ -121,17 +121,13 @@ test("mid-booking waits for result then cancels; stopping ride leaves dinner req
     } else s.step = "calling";
     s.pending = { id: 900, ms: 2500 };
     s = act(s, "CANCEL_PROMPT", task);
-    expect(s.cancelStage).toBe("pick");
-    s = act(s, "CANCEL_CONTINUE");
-    s = act(s, "CANCEL_CONFIRM");
+    expect(s.cancelStage).toBeUndefined();
+    expect(s.step).toBe("stopping");
     expect(
       s.messages.at(-1)?.[task === "table" ? "tableStatus" : "rideStatus"],
-    ).toBe("Cancelling…");
+    ).toBe("Stopping…");
     s = act(s, "TICK");
-    expect(s.step).toBe("cancelling");
-    expect(task === "table" ? s.booked : s.rideBooked).toBe(true);
-    s = act(s, "TICK");
-    expect(task === "table" ? s.tableOutcome : s.rideOutcome).toBe("cancelled");
+    expect(task === "table" ? s.tableOutcome : s.rideOutcome).toBe("stopped");
     expect(s.messages.some((m) => m.planTag === "Updating")).toBe(false);
   }
   let s = ready(false);
@@ -222,11 +218,9 @@ test("picker and alert match scope; table-only result asks about ride; cancel re
   await p.getByRole("button", { name: "Cancel table", exact: true }).click();
   await tick(p);
   await expect(
-    p.getByText(
-      "Your ride is still going to Longtang Bistro. Cancel it too, or keep it?",
-    ),
+    p.getByText("Your ride is still going to Longtang Bistro. Cancel it too?"),
   ).toBeVisible();
-  await p.getByRole("button", { name: "Cancel ride too", exact: true }).click();
+  await p.getByRole("button", { name: "Yes", exact: true }).click();
   await expect(p.getByRole("checkbox", { name: /Ride ·/ })).toBeChecked();
   await p.getByRole("button", { name: "Continue · 1 selected" }).click();
   await p.getByRole("button", { name: "Cancel ride", exact: true }).click();

@@ -1,3 +1,4 @@
+import type { Decision } from "./decisions";
 export type Role = "main" | "dining" | "mobility";
 export type Branch = "off" | "working" | "done" | "attention";
 export type TaskStatus =
@@ -29,7 +30,9 @@ export type Step =
   | "rideBooked"
   | "complete"
   | "checkingCancel"
-  | "cancelling";
+  | "cancelling"
+  | "readingChoice"
+  | "stopping";
 export type Plan = {
   time: string;
   party: number;
@@ -39,6 +42,7 @@ export type Plan = {
   pickup: string;
   contact: string;
   note: string;
+  preferences?: string;
 };
 export type Restaurant = {
   id: string;
@@ -49,6 +53,8 @@ export type Restaurant = {
   minutes: number;
   distance: string;
   address: string;
+  englishMenu: boolean;
+  foreignCards: boolean;
 };
 export const restaurants: Restaurant[] = [
   {
@@ -59,6 +65,8 @@ export const restaurants: Restaurant[] = [
     photo: "15734.png",
     minutes: 22,
     distance: "1.8",
+    englishMenu: true,
+    foreignCards: true,
     address: "18 Jinxian Road · 进贤路18号",
   },
   {
@@ -69,6 +77,8 @@ export const restaurants: Restaurant[] = [
     photo: "4be00.png",
     minutes: 26,
     distance: "2.4",
+    englishMenu: true,
+    foreignCards: true,
     address: "28 Changle Road · 长乐路28号",
   },
   {
@@ -79,6 +89,8 @@ export const restaurants: Restaurant[] = [
     photo: "fc5a4.png",
     minutes: 18,
     distance: "1.5",
+    englishMenu: true,
+    foreignCards: true,
     address: "18 Nanchang Road · 南昌路18号",
   },
   {
@@ -89,6 +101,8 @@ export const restaurants: Restaurant[] = [
     photo: "87ffc.png",
     minutes: 15,
     distance: "1.2",
+    englishMenu: true,
+    foreignCards: true,
     address: "36 Fuxing Road · 复兴路36号",
   },
   {
@@ -99,6 +113,8 @@ export const restaurants: Restaurant[] = [
     photo: "51536.png",
     minutes: 20,
     distance: "1.6",
+    englishMenu: true,
+    foreignCards: true,
     address: "22 Shaanxi Road · 陕西路22号",
   },
   {
@@ -109,6 +125,8 @@ export const restaurants: Restaurant[] = [
     photo: "19ebd.png",
     minutes: 25,
     distance: "2.1",
+    englishMenu: true,
+    foreignCards: true,
     address: "8 Zhongshan Road · 中山路8号",
   },
   {
@@ -119,6 +137,8 @@ export const restaurants: Restaurant[] = [
     photo: "e935c.png",
     minutes: 12,
     distance: "1.0",
+    englishMenu: true,
+    foreignCards: true,
     address: "16 Maoming Road · 茂名路16号",
   },
   {
@@ -129,6 +149,8 @@ export const restaurants: Restaurant[] = [
     photo: "4c08b.png",
     minutes: 20,
     distance: "1.6",
+    englishMenu: true,
+    foreignCards: true,
     address: "58 Huaihai Road · 淮海路58号",
   },
   {
@@ -139,6 +161,8 @@ export const restaurants: Restaurant[] = [
     photo: "1d052.png",
     minutes: 25,
     distance: "2.1",
+    englishMenu: true,
+    foreignCards: true,
     address: "38 Ruijin Road · 瑞金路38号",
   },
 ];
@@ -223,7 +247,9 @@ export type CardKind =
   | "rideSuccess"
   | "change"
   | "updated"
-  | "tonight";
+  | "tonight"
+  | "decision"
+  | "clarify";
 export type Message = {
   id: number;
   kind: "main" | "alex" | "event" | "card";
@@ -234,6 +260,7 @@ export type Message = {
   restaurant?: Restaurant;
   batch?: number;
   version?: number;
+  decision?: Decision;
   planTag?: string;
   updateNote?: string;
   carType?: number;
@@ -249,7 +276,27 @@ export type Header = {
   both?: boolean;
   from?: Role;
 };
+export const demoIds = [
+  "normal",
+  "exception",
+  "cancel-ride",
+  "cancel-all",
+  "decide",
+  "vague",
+  "stopping",
+] as const;
+export type Demo = (typeof demoIds)[number];
 export type State = {
+  demo?: Demo;
+  decision?: Decision;
+  choiceResume?: Step;
+  choicePending?: { id: number; ms: number };
+  clarifying?: boolean;
+  editDraft?: Plan;
+  inputFocusVersion?: number;
+  inputPrefill?: string;
+  stoppedDuringBooking?: { table: boolean; ride: boolean };
+  cancelFromCard?: boolean;
   flow: "normal" | "exception";
   step: Step;
   messages: Message[];
@@ -285,7 +332,7 @@ export type State = {
   resumePending?: { id: number; ms: number };
   paused: boolean;
 };
-export type Action = { type: string; value?: any };
+export type Action = { type: string; value?: any; acknowledged?: boolean };
 export function initial(flow: "normal" | "exception"): State {
   return {
     flow,
