@@ -429,7 +429,7 @@ small {
 }
 .reaction {
   position: absolute;
-  right: 16px;
+  right: 0;
   bottom: 0;
   width: 32px;
   height: 32px;
@@ -439,6 +439,7 @@ small {
   display: grid;
   place-items: center;
   font-size: 15px;
+  line-height: 1;
 }
 .event {
   display: flex;
