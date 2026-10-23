@@ -85,7 +85,7 @@ test("working sheet Stop and request card geometry", async ({ page: p }) => {
   ).toBeVisible();
   await expect(p.locator(".top-fade")).toHaveCSS("height", "56px");
 });
-test("calendar exports the booking and only final summary retains Cancel", async ({
+test("staff view shows fullscreen Chinese booking details and latest Cancel", async ({
   page: p,
 }) => {
   await p.goto("?flow=cancel-all&debug=1");
@@ -95,9 +95,16 @@ test("calendar exports the booking and only final summary retains Cancel", async
   await expect(
     p.getByRole("button", { name: "Cancel…", exact: true }),
   ).toHaveCount(1);
-  const download = p.waitForEvent("download");
-  await p.getByRole("button", { name: "Add to calendar", exact: true }).click();
-  expect((await download).suggestedFilename()).toBe("pal-dinner.ics");
+  await p.getByRole("button", { name: "Show to staff", exact: true }).click();
+  await expect(p.locator(".staff-fullscreen")).toBeVisible();
+  await expect(p.locator(".staff-booking")).toContainText("预订编号");
+  await expect(p.locator(".staff-booking")).toContainText("PAL-2048");
+  const heights = await p.evaluate(() => [
+    document.querySelector(".staff-fullscreen")!.getBoundingClientRect().height,
+    document.querySelector(".phone")!.getBoundingClientRect().height,
+  ]);
+  expect(Math.abs(heights[0] - heights[1])).toBeLessThan(20);
+  await p.getByRole("dialog").getByRole("button").first().click();
   await p.getByRole("button", { name: "Who's working on tonight" }).click();
   await expect(
     p.getByRole("dialog").getByRole("button", { name: "Stop", exact: true }),

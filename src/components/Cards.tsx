@@ -55,7 +55,7 @@ export function Row({
       <span className="label">{label}</span>
       <span className="value">{children}</span>
       {edit && (
-        <button className="chip" onClick={edit}>
+        <button className="chip" aria-label={`Edit ${label}`} onClick={edit}>
           Edit
         </button>
       )}
@@ -374,12 +374,45 @@ export function Card({
     return (
       <section className="card">
         <h3>Your request</h3>
-        <Row label="When">Tonight, {p.time}</Row>
-        <Row label="Party">{p.party} people</Row>
-        <Row label="Restaurant type">{p.cuisine}</Row>
-        <Row label="Budget">Up to ¥{p.budget} / person</Row>
-        <Row label="Ride after dinner">
-          {p.ride ? "Ride from my hotel" : "Dinner only"}
+        <Row
+          label="When"
+          edit={
+            active ? () => open({ type: "edit", value: "request" }) : undefined
+          }
+        >
+          Tonight, {p.time}
+        </Row>
+        <Row
+          label="Party"
+          edit={
+            active ? () => open({ type: "edit", value: "request" }) : undefined
+          }
+        >
+          {p.party} people
+        </Row>
+        <Row
+          label="Cuisine"
+          edit={
+            active ? () => open({ type: "edit", value: "request" }) : undefined
+          }
+        >
+          {p.cuisine}
+        </Row>
+        <Row
+          label="Budget"
+          edit={
+            active ? () => open({ type: "edit", value: "request" }) : undefined
+          }
+        >
+          Under ¥{p.budget} per person
+        </Row>
+        <Row
+          label="Then"
+          edit={
+            active ? () => open({ type: "edit", value: "request" }) : undefined
+          }
+        >
+          {p.ride ? "A ride from your hotel" : "Dinner only"}
         </Row>
         <div className="request-actions">
           <Button
@@ -495,67 +528,17 @@ export function Card({
           {cancel("table")}
         </div>
         <Row label="Restaurant">
-          {r.name}
-          <br />
-          <span lang="zh">{r.cn}</span>
+          {r.name} <span lang="zh">{r.cn}</span>
         </Row>
         <Row label="Address">{r.address}</Row>
         <Row label="Booking no.">PAL-2048</Row>
-        <Row label="When">
-          Tonight, {p.time} · {p.party} people
-        </Row>
+
         <Button
           secondary
           disabled={!s.booked}
           onClick={() => open({ type: "staff", value: { r, p } })}
         >
           Show to staff
-        </Button>
-        <Button
-          secondary
-          disabled={!s.booked}
-          onClick={() => {
-            const date = new Date()
-              .toLocaleDateString("en-CA", { timeZone: "Asia/Shanghai" })
-              .replaceAll("-", "");
-            const match = p.time.match(/(\d+):(\d+)\s*(AM|PM)/i)!;
-            const hour =
-              (Number(match[1]) % 12) +
-              (match[3].toUpperCase() === "PM" ? 12 : 0);
-            const escape = (v: string) =>
-              v
-                .replace(/\\/g, "\\\\")
-                .replace(/\n/g, "\\n")
-                .replace(/[,;]/g, (c) => "\\" + c);
-            const data = [
-              "BEGIN:VCALENDAR",
-              "VERSION:2.0",
-              "PRODID:-//Pal//Prototype//EN",
-              "BEGIN:VEVENT",
-              `UID:pal-${date}-${r.id}@prototype`,
-              `DTSTAMP:${new Date()
-                .toISOString()
-                .replace(/[-:]/g, "")
-                .replace(/\.\d{3}/, "")}`,
-              `DTSTART;TZID=Asia/Shanghai:${date}T${String(hour).padStart(2, "0")}${match[2]}00`,
-              "DURATION:PT1H30M",
-              `SUMMARY:${escape(`Dinner at ${r.name}`)}`,
-              `LOCATION:${escape(r.address)}`,
-              "DESCRIPTION:Pal design prototype - no real reservation. Confirmation PAL-2048.",
-              "END:VEVENT",
-              "END:VCALENDAR",
-            ].join("\r\n");
-            const url = URL.createObjectURL(
-              new Blob([data], { type: "text/calendar" }),
-            );
-            const a = document.createElement("a");
-            a.href = url;
-            a.download = "pal-dinner.ics";
-            a.click();
-            setTimeout(() => URL.revokeObjectURL(url), 1000);
-          }}
-        >
-          Add to calendar
         </Button>
       </section>
     );

@@ -236,6 +236,19 @@ test("restaurant geometry, SVG tags and dark green actions on narrow screens", a
   const card = p.locator(".restaurant-card").last();
   await card.scrollIntoViewIfNeeded();
   expect(await card.locator(".tags svg").count()).toBe(2);
+  await expect(card.locator(".tags")).toHaveCSS("gap", "16px");
+  await expect(card.locator(".tags > span").first()).toHaveCSS(
+    "background-color",
+    "rgba(0, 0, 0, 0)",
+  );
+  await expect(card.locator(".tags > span").first()).toHaveCSS(
+    "padding",
+    "0px",
+  );
+  await expect(card.locator(".tags > span").first()).toHaveCSS(
+    "height",
+    "20px",
+  );
   expect(
     await card
       .getByRole("button", { name: "Choose", exact: true })

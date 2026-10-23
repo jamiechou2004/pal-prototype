@@ -96,7 +96,9 @@ test("exception A via natural language, outdated estimate and explicit confirmat
   await expect(
     p.getByRole("button", { name: "Book table for 8:00 PM" }),
   ).toBeEnabled();
-  await expect(p.getByText("Booking confirmed", { exact: true })).toHaveCount(0);
+  await expect(p.getByText("Booking confirmed", { exact: true })).toHaveCount(
+    0,
+  );
   await p.getByRole("button", { name: "Book table for 8:00 PM" }).click();
   await skip(p);
   await ride(p);
@@ -241,7 +243,10 @@ test("edit time before approval, pause, and stale controls", async ({
     .first()
     .click();
   await skip(p);
-  await p.getByRole("button", { name: "Edit", exact: true }).click();
+  await expect(
+    p.locator('[data-message="request"] .detail-row button'),
+  ).toHaveCount(5);
+  await p.getByRole("button", { name: "Edit When", exact: true }).click();
   await p.getByRole("button", { name: "8:00 PM", exact: true }).click();
   await p.getByRole("button", { name: "Update request · 8:00 PM" }).click();
   await expect(

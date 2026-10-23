@@ -118,7 +118,7 @@ export function Sheets({
       />
       <motion.div
         ref={root}
-        className="sheet"
+        className={`sheet ${sheet.type === "staff" ? "staff-fullscreen" : ""}`}
         role="dialog"
         aria-modal="true"
         aria-label={name}
@@ -153,7 +153,11 @@ export function Sheets({
       >
         <div className="grabber" />
         <div className="sheet-title">
-          <button className="chip" onClick={close}>
+          <button
+            className="chip"
+            aria-label={sheet.type === "edit" ? "Cancel" : "Close sheet"}
+            onClick={close}
+          >
             {sheet.type === "edit" ? "Cancel" : <X size={17} />}
           </button>
           <h3>{name}</h3>
@@ -428,17 +432,44 @@ export function Sheets({
           )}
           {sheet.type === "staff" && (
             <>
-              <span className="success-tag">Reservation · PAL-2048</span>
-              <h2 lang="zh">
-                我预订了今晚 {p.time} 的 {p.party} 人桌。
-              </h2>
-              <p>
-                I have a reservation for {p.party} tonight at {p.time}.
-              </p>
-              <h3>
-                {r.name} · {r.cn}
-              </h3>
-              <p>{r.address}</p>
+              <div className="staff-booking" lang="zh-CN">
+                <p className="staff-kicker">餐厅预订信息</p>
+                <h2>{r.cn}</h2>
+                <p>{r.name}</p>
+                <h3>您好，我预订了今晚的 {p.party} 人桌。</h3>
+                <dl>
+                  <div>
+                    <dt>时间</dt>
+                    <dd>
+                      今晚{" "}
+                      {(() => {
+                        const m = p.time.match(/(\d+):(\d+)\s*(AM|PM)/i);
+                        return m
+                          ? `${(Number(m[1]) % 12) + (m[3].toUpperCase() === "PM" ? 12 : 0)}:${m[2]}`
+                          : p.time;
+                      })()}
+                    </dd>
+                  </div>
+                  <div>
+                    <dt>人数</dt>
+                    <dd>{p.party} 位</dd>
+                  </div>
+                  <div>
+                    <dt>预订人</dt>
+                    <dd>{p.contact}</dd>
+                  </div>
+                  <div>
+                    <dt>预订编号</dt>
+                    <dd>PAL-2048</dd>
+                  </div>
+                  <div>
+                    <dt>地址</dt>
+                    <dd>{r.address}</dd>
+                  </div>
+                </dl>
+                <p>我不会说中文，请帮我核对预订。谢谢！</p>
+                <small>设计原型展示 · 非真实预订</small>
+              </div>
             </>
           )}
           {sheet.type === "driver" && (
