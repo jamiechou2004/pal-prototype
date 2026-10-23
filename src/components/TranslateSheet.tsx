@@ -49,6 +49,7 @@ export function TranslateSheet({
   };
   const swap = () => {
     stop();
+    setFull(false);
     setReverse((v) => !v);
   };
   const dismiss = () => {
@@ -91,7 +92,7 @@ export function TranslateSheet({
   const driverReply = () => {
     stop();
     setListening(true);
-    setNotice("Playing the sample driver reply — demo only.");
+    setNotice("Playing the sample driver reply.");
     timer.current = setTimeout(() => {
       if (!alive.current) return;
       setListening(false);
@@ -234,16 +235,18 @@ export function TranslateSheet({
                 {speaking ? "Stop playback" : "Play in Chinese"}
               </button>
             )}
-            <button
-              className="button secondary"
-              onClick={() => setFull((v) => !v)}
-            >
-              {full ? "Exit full screen" : "Full screen"}
-            </button>
+            {!reverse && (
+              <button
+                className="button secondary"
+                onClick={() => setFull((v) => !v)}
+              >
+                {full ? "Exit full screen" : "Full screen"}
+              </button>
+            )}
           </div>
           <p className="translation-footer">
             {reverse
-              ? "Demo translation. Main Pal keeps the reply in your chat."
+              ? "Main Pal keeps the reply in your chat."
               : "Translated by Main Pal. Turn the phone toward your driver."}
           </p>
           {notice && (

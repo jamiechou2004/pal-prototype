@@ -44,7 +44,7 @@
   --pal-ink: #1f2b2e;
   --pal-paper: #f6f7f4;
   font-family:
-    -apple-system, "SF Pro Text", "Helvetica Neue", "PingFang SC", Arial,
+    -apple-system, "SF Pro Text", "PingFang SC", "Helvetica Neue", Arial,
     sans-serif;
   color: var(--text-primary);
   font-size: 17px;

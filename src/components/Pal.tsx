@@ -1,5 +1,4 @@
 import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
-import { useEffect, useState } from "react";
 import type { Header, Role } from "../engine/script";
 export const asset = (name: string) => `${import.meta.env.BASE_URL}img/${name}`;
 export function Pal({
@@ -19,9 +18,9 @@ export function Pal({
     >
       <img
         alt=""
-        width="240"
-        height="240"
-        style={{ transform: `scale(${size / 240})` }}
+        width={state === "mini" ? 32 : 240}
+        height={state === "mini" ? 32 : 240}
+        style={{ transform: `scale(${size / (state === "mini" ? 32 : 240)})` }}
         src={`${import.meta.env.BASE_URL}pal/pal-a-${role}-${state}.svg`}
       />
     </span>
@@ -35,70 +34,40 @@ export function HandoffPal({
   size?: number;
 }) {
   const reduced = useReducedMotion();
-  const [briefing, setBriefing] = useState(false);
-  useEffect(() => {
-    if (
-      header.branch === "working" &&
-      header.from &&
-      header.from !== header.role
-    ) {
-      setBriefing(true);
-      const t = setTimeout(() => setBriefing(false), 1100);
-      return () => clearTimeout(t);
-    }
-    setBriefing(false);
-  }, [header.role, header.branch, header.activity]);
+  const working = header.branch === "working" && header.role !== "main";
+  const role = header.both ? "dining" : header.role;
+  const state =
+    header.branch === "done"
+      ? "done"
+      : header.branch === "attention"
+        ? "attention"
+        : "idle";
   return (
     <span
       className="handoff-pal"
       style={{ width: size, height: size }}
       aria-label={
-        briefing
-          ? `${header.from} briefing ${header.role}`
-          : `${header.role} is responsible`
+        working ? `Main Pal briefing ${role} Pal` : `Main Pal ${state}`
       }
     >
-      <AnimatePresence initial={false} mode="sync">
-        {briefing ? (
+      <Pal role="main" state={working ? "working" : state} size={size} />
+      <AnimatePresence>
+        {working && (
           <motion.span
-            key="sender"
-            className="sender"
-            initial={false}
-            animate={{ scale: 0.85, x: -2 }}
-            exit={reduced ? { opacity: 0 } : { opacity: 0, scale: 0.6, x: -9 }}
-          >
-            <Pal role={header.from || "main"} size={size} />
-          </motion.span>
-        ) : null}
-        <motion.span
-          className="recipient"
-          key={header.role}
-          initial={reduced ? false : { scale: 0.2, x: 8, y: 8, opacity: 0 }}
-          animate={
-            briefing
-              ? { scale: 0.4, x: size * 0.47, y: size * 0.4, opacity: 1 }
-              : { scale: 1, x: 0, y: 0, opacity: 1 }
-          }
-          transition={
-            reduced
-              ? { duration: 0 }
-              : { type: "spring", stiffness: 300, damping: 26 }
-          }
-        >
-          <Pal
-            role={header.role}
-            state={
-              header.branch === "working"
-                ? "working"
-                : header.branch === "done"
-                  ? "done"
-                  : header.branch === "attention"
-                    ? "attention"
-                    : "idle"
+            key={role}
+            className="handoff-partner"
+            initial={reduced ? false : { scale: 0.4, x: -8, y: -4, opacity: 0 }}
+            animate={{ scale: 1, x: 0, y: 0, opacity: 1 }}
+            exit={{ scale: 0.4, x: -8, y: -4, opacity: 0 }}
+            transition={
+              reduced
+                ? { duration: 0 }
+                : { type: "spring", stiffness: 300, damping: 26 }
             }
-            size={size}
-          />
-        </motion.span>
+          >
+            <Pal role={role} size={size * 0.47} state="working" />
+          </motion.span>
+        )}
       </AnimatePresence>
     </span>
   );

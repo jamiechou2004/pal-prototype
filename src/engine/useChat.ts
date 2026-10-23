@@ -35,7 +35,7 @@ export function reducer(state: State, a: Action): State {
       ...extra,
     });
   const off = () => {
-    s.header = { branch: "off", activity: "", role: s.header.role };
+    s.header = { branch: "off", activity: "", role: "main" };
   };
   const work = (
     role: Role,
@@ -72,16 +72,16 @@ export function reducer(state: State, a: Action): State {
   const booking = () => {
     s.step = "booking";
     s.version++;
+    if (s.plan.ride) {
+      work("mobility", "Mobility · Route & fare");
+      msg("event", "Messaged", "mobility");
+    }
     msg(
       "main",
       `To hold the table at ${s.restaurant.name}, the restaurant needs a contact. I've filled this in from your profile.`,
     );
     card("booking");
     s.tasks.dining = "Waiting for you";
-    if (s.plan.ride) {
-      work("mobility", "Mobility · Route & fare");
-      msg("event", "Messaged", "mobility");
-    }
   };
   const find = (batch: number) => {
     s.batch = batch;
@@ -128,6 +128,7 @@ export function reducer(state: State, a: Action): State {
       break;
     case "MORE":
       if (s.step !== "restaurants") return state;
+      s.findingMore = true;
       s.batch = s.plan.cuisine === "Cantonese" ? 2 : s.batch === 0 ? 1 : 0;
       work("dining", "Dining · Finding more");
       wait("finding", 1800);
@@ -186,10 +187,18 @@ export function reducer(state: State, a: Action): State {
       s.version++;
       msg(
         "main",
-        `Got it — 8:00 PM at ${s.restaurant.name}${s.plan.ride ? ", and I'll move your ride" : ""}. Nothing is booked yet.`,
+        `Got it — 8:00 PM at ${s.restaurant.name}${s.plan.ride ? `, and I'll move your ride to ${route(s.restaurant, s.plan).leave}. Updating both Pals…` : ". Updating Dining Pal…"} Nothing is booked yet.`,
       );
-      msg("event", "Messaged · Dining & Mobility");
-      work("dining", "Updating both to 8 PM", s.plan.ride);
+      msg(
+        "event",
+        s.plan.ride ? "Messaged · Dining & Mobility" : "Messaged",
+        s.plan.ride ? undefined : "dining",
+      );
+      work(
+        "dining",
+        s.plan.ride ? "Updating both to 8 PM" : "Dining · Updating to 8 PM",
+        s.plan.ride,
+      );
       wait("updating", 2000);
       break;
     case "CHOOSE_B":
@@ -255,6 +264,8 @@ export function reducer(state: State, a: Action): State {
       }
       s.cancelPrompt = a.value;
       s.resumeStep = s.step;
+      s.resumeDining = s.tasks.dining;
+      s.cancelledCalledRide = s.rideBooked;
       s.resumePending = s.pending;
       s.pending = undefined;
       s.thinking = "";
@@ -264,7 +275,25 @@ export function reducer(state: State, a: Action): State {
           ? `I'll cancel only the ride. ${s.booked ? `Your table at ${s.restaurant.name} stays booked.` : "Dining can continue."} Cancel ride?`
           : "I can stop the dinner and ride plan. Please review both tasks before confirming.",
       );
-      card("cancel", { cancel: a.value });
+      card("cancel", {
+        cancel: a.value,
+        tableStatus: s.booked
+          ? a.value === "all"
+            ? "Booked → will cancel"
+            : "Stays booked"
+          : s.tasks.dining === "Not started"
+            ? "Not started"
+            : s.tasks.dining === "Working"
+              ? a.value === "all"
+                ? "In progress → will stop"
+                : "In progress — continues"
+              : a.value === "all"
+                ? "Not booked → stop planning"
+                : "Waiting for your confirmation",
+        rideStatus: s.rideBooked
+          ? "Booked → will cancel"
+          : "Not called — nothing to cancel",
+      });
       break;
     case "KEEP":
       s.cancelPrompt = undefined;
@@ -277,7 +306,7 @@ export function reducer(state: State, a: Action): State {
       break;
     case "CANCEL_CONFIRM":
       if (!s.cancelPrompt) return state;
-      s.version++;
+      if (s.cancelPrompt === "all") s.version++;
       msg("alex", s.cancelPrompt === "ride" ? "Cancel ride" : "Cancel both");
       work(
         "mobility",
@@ -287,10 +316,7 @@ export function reducer(state: State, a: Action): State {
       wait("cancelling", 1800);
       break;
     case "TRANSLATION_REPLY":
-      msg(
-        "main",
-        `Driver reply (demo): “${a.value.source}”\n${a.value.translation}`,
-      );
+      msg("main", `Driver reply: “${a.value.source}”\n${a.value.translation}`);
       break;
     case "TEXT":
       msg("alex", a.value);
@@ -316,7 +342,12 @@ export function reducer(state: State, a: Action): State {
         case "finding":
           s.step = "restaurants";
           s.version++;
-          done("dining", "Dining · Found 3 places");
+          done(
+            "dining",
+            s.findingMore
+              ? "Dining · 3 more places"
+              : "Dining · Found 3 places",
+          );
           msg("event", "Message from", "dining");
           const matches = restaurants
             .slice(s.batch * 3, s.batch * 3 + 3)
@@ -328,9 +359,10 @@ export function reducer(state: State, a: Action): State {
           msg(
             "main",
             matches.length
-              ? `Here are ${matches.length} ${s.plan.cuisine === "Cantonese" ? "Cantonese " : ""}places with a table at ${s.plan.time}, all under ¥${s.plan.budget} per person.`
-              : `I don't have a matching ${s.plan.cuisine} place within ¥${s.plan.budget} in this demo. Please adjust your preferences.`,
+              ? `Here are ${matches.length} ${s.findingMore ? "more " : ""}${s.plan.cuisine === "Cantonese" ? "Cantonese " : ""}places with a table at ${s.plan.time}, all under ¥${s.plan.budget} per person.`
+              : `I don't have a matching ${s.plan.cuisine} place within ¥${s.plan.budget}. Please adjust your preferences.`,
           );
+          s.findingMore = false;
           card("carousel");
           s.pending = { id: s.seq++, ms: 1400 };
           break;
@@ -375,14 +407,21 @@ export function reducer(state: State, a: Action): State {
               `You're booked! ${s.restaurant.name}, tonight at ${s.plan.time}, table for ${s.plan.party}.`,
             );
             card("bookingSuccess");
-            wait("booked", 1600);
+            wait("booked", 1400);
           }
           break;
         case "updating":
           s.step = "updated";
-          done("dining", "Both Pals updated");
+          done(
+            "dining",
+            s.plan.ride ? "Both Pals updated" : "Dining · Plan updated",
+          );
           s.tasks.mobility = s.plan.ride ? "Done" : "Not started";
-          msg("event", "Message from · Dining & Mobility");
+          msg(
+            "event",
+            s.plan.ride ? "Message from · Dining & Mobility" : "Message from",
+            s.plan.ride ? undefined : "dining",
+          );
           msg(
             "main",
             `Here's your updated plan. Book the table for ${s.plan.time}?`,
@@ -429,7 +468,7 @@ export function reducer(state: State, a: Action): State {
             `Your driver is on the way. You'll arrive around ${route(s.restaurant, s.plan).arrive}.`,
           );
           card("rideSuccess");
-          wait("rideBooked", 1600);
+          wait("rideBooked", 1400);
           break;
         case "rideBooked":
           s.step = "complete";
@@ -449,13 +488,35 @@ export function reducer(state: State, a: Action): State {
           if (all) {
             s.booked = false;
             s.tasks.dining =
-              s.tasks.dining === "Not started" ? "Not started" : "Cancelled";
+              s.resumeDining === "Not started" ? "Not started" : "Cancelled";
           }
+          if (!all)
+            s.messages = s.messages.map((m) =>
+              m.kind === "card" && m.version === s.version && m.plan
+                ? { ...m, plan: { ...m.plan, ride: false } }
+                : m,
+            );
           s.cancelResult = all
-            ? "Dinner plan cancelled. Ride cancelled. No fee in this demo."
+            ? "Dinner plan cancelled. Ride plan cancelled. No fee."
             : `Ride cancelled · no fee. ${s.booked ? "Your table stays booked." : "Dining continues."}`;
           msg("main", s.cancelResult);
-          card("cancelResult", { result: s.cancelResult });
+          card("cancelResult", {
+            result: s.cancelResult,
+            tableStatus: all
+              ? s.resumeDining === "Not started"
+                ? "Not started"
+                : "Cancelled · done"
+              : s.booked
+                ? "Still booked"
+                : s.resumeDining === "Working"
+                  ? "In progress — continues"
+                  : s.resumeDining === "Not started"
+                    ? "Not started"
+                    : "Waiting for your confirmation",
+            rideStatus: s.cancelledCalledRide
+              ? "Cancelled · done"
+              : "Not called — nothing to cancel",
+          });
           s.cancelPrompt = undefined;
           s.resumeStep = undefined;
           s.resumePending = undefined;
@@ -464,13 +525,13 @@ export function reducer(state: State, a: Action): State {
           s.step = "complete";
           s.pending = { id: s.seq++, ms: 1400 };
           if (!all && !s.booked && resume) {
+            s.tasks.dining = s.resumeDining || "Waiting for you";
             s.step = resume;
             s.pending = pending ? { ...pending, id: s.seq++ } : undefined;
             off();
-            s.header.role = "dining";
-            if (resume === "request") card("request");
-            if (resume === "booking") card("booking");
-            if (resume === "restaurants") card("carousel");
+            if (s.tasks.dining === "Working")
+              work("dining", "Dining · Continuing plan");
+
             if (resume === "permission" || resume === "denied") booking();
             if (resume === "exception") {
               s.header = {
@@ -478,9 +539,7 @@ export function reducer(state: State, a: Action): State {
                 activity: "Dining · 7:00 PM full",
                 role: "dining",
               };
-              card("change");
             }
-            if (resume === "updated") card("updated");
           }
           break;
         }

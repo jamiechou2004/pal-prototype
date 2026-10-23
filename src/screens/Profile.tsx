@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { ArrowLeft, Plus, Search, Mic, ChevronRight } from "lucide-react";
+import { ChevronLeft, Plus, Search, Mic, ChevronRight } from "lucide-react";
 import { Pal } from "../components/Pal";
 import type { Role, State } from "../engine/script";
 export function Profile({
@@ -34,7 +34,7 @@ export function Profile({
           aria-label="Back to chat"
           onClick={back}
         >
-          <ArrowLeft />
+          <ChevronLeft />
         </button>
         {!search && (
           <button

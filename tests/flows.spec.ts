@@ -7,8 +7,8 @@ async function skip(p: Page) {
   if (await b.count()) await b.click();
 }
 async function start(p: Page, flow = "normal") {
-  await p.goto(`?flow=${flow}`);
-  await p.getByRole("button", { name: "Use keyboard" }).click();
+  await p.goto(`?flow=${flow}&debug=1`);
+  await p.getByRole("textbox", { name: "Message Main Pal" }).click();
   await p.getByRole("button", { name: "Send message" }).click();
   await skip(p);
   await p.getByRole("button", { name: "Looks good", exact: true }).click();
@@ -121,7 +121,7 @@ test("exception custom Cantonese and cancel everything", async ({
 }) => {
   await exception(p);
   await p.getByRole("button", { name: "Customize", exact: true }).click();
-  await p.getByLabel("Cuisine", { exact: true }).selectOption("Cantonese");
+  await p.getByRole("button", { name: "Cantonese", exact: true }).click();
   await p
     .getByRole("button", { name: "Update · Cantonese at 7:00 PM" })
     .click();
@@ -202,8 +202,8 @@ test("manual address, request editing, carousel dots, pause and no asset failure
 test("edit time before approval, pause, and stale controls", async ({
   page: p,
 }) => {
-  await p.goto("?flow=normal");
-  await p.getByRole("button", { name: "Use keyboard" }).click();
+  await p.goto("?flow=normal&debug=1");
+  await p.getByRole("textbox", { name: "Message Main Pal" }).click();
   await p.getByRole("button", { name: "Send message" }).click();
   await p
     .getByRole("button", { name: "Pause", exact: true })
@@ -240,8 +240,8 @@ test("edit time before approval, pause, and stale controls", async ({
 test("cancel in-progress tasks needs confirmation, keep resumes", async ({
   page: p,
 }) => {
-  await p.goto("?flow=normal");
-  await p.getByRole("button", { name: "Use keyboard" }).click();
+  await p.goto("?flow=normal&debug=1");
+  await p.getByRole("textbox", { name: "Message Main Pal" }).click();
   await p.getByRole("button", { name: "Send message" }).click();
   await skip(p);
   await p.getByRole("button", { name: "Looks good", exact: true }).click();
@@ -256,9 +256,11 @@ test("cancel in-progress tasks needs confirmation, keep resumes", async ({
 });
 test("reduced motion and typed custom request", async ({ page: p }) => {
   await p.emulateMedia({ reducedMotion: "reduce" });
-  await p.goto("?flow=normal");
-  await expect(p.getByRole("button", { name: "Hold to ask" })).toBeVisible();
-  await p.getByRole("button", { name: "Use keyboard" }).click();
+  await p.goto("?flow=normal&debug=1");
+  await expect(
+    p.getByRole("textbox", { name: "Message Main Pal" }),
+  ).toBeVisible();
+  await p.getByRole("textbox", { name: "Message Main Pal" }).click();
   await p
     .getByRole("textbox", { name: "Message Main Pal" })
     .fill("Cantonese at 7 under ¥180");

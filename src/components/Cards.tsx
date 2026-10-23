@@ -138,7 +138,7 @@ function Carousel({
               <span>Foreign cards OK</span>
             </div>
             <div
-              className={`trip-row ${s.exceptionResolved || s.step === "exception" ? "old-estimate" : ""}`}
+              className={`trip-row ${m.version !== s.version && (s.exceptionResolved || s.step === "exception") ? "old-estimate" : ""}`}
             >
               <div>
                 {r.minutes} min by car · {r.distance} km
@@ -176,7 +176,7 @@ function Carousel({
       </div>
       {items.length === 0 && (
         <div className="card">
-          <h3>No matching places in this demo</h3>
+          <h3>No matching places</h3>
           <p>Try a budget of ¥150 or more, or change the cuisine.</p>
           <Button onClick={() => open({ type: "edit", value: "custom" })}>
             Adjust preferences
@@ -322,7 +322,7 @@ export function Card({
           label="Contact"
           edit={active ? () => open({ type: "contact" }) : undefined}
         >
-          {plan.contact}
+          {plan.contact.replace(/(?:\+?\d[\d ()-]{5,})(\d{4})$/, "••• $1")}
         </Row>
         <Row
           label="Note"
@@ -354,7 +354,7 @@ export function Card({
           <span lang="zh">{r.cn}</span>
         </Row>
         <Row label="Address">{r.address}</Row>
-        <Row label="Booking no.">PAL-2048 · Demo</Row>
+        <Row label="Booking no.">PAL-2048</Row>
         <Row label="When">
           Tonight, {p.time} · {p.party} people
         </Row>
@@ -376,7 +376,9 @@ export function Card({
         {p.ride && (
           <div className="outdated">
             <span>Outdated · previous ride estimate</span>
-            <s>Leave 6:35 PM · ¥32–38</s>
+            <s>
+              Leave {rr.leave} · ¥{rr.ranges[0]}
+            </s>
           </div>
         )}
         <button
@@ -433,7 +435,9 @@ export function Card({
             <b className="green">
               Leave {rr.leave} · {r.minutes} min
             </b>{" "}
-            <s className="footnote">6:35 PM</s>
+            <s className="footnote">
+              {route(r, { ...p, time: "7:00 PM" }).leave}
+            </s>
             <p>Fare shown when you pick a car</p>
           </div>
         )}
@@ -580,24 +584,23 @@ export function Card({
             : "Cancel only the ride?"}
         </h3>
         <Row label="Table">
-          {s.booked
-            ? m.cancel === "all"
-              ? "Booked → will cancel"
-              : "Stays booked"
-            : s.tasks.dining === "Working"
-              ? "In progress → will stop"
-              : "Not booked"}
-          {m.cancel === "all" && <small>Demo policy: free until 6:00 PM</small>}
+          {m.tableStatus}
+          {m.cancel === "all" && (
+            <small>
+              {m.tableStatus?.startsWith("Booked")
+                ? "Cancellation fee: ¥0 · free until 6:00 PM"
+                : "No reservation charge"}
+            </small>
+          )}
         </Row>
         <Row label="Ride">
-          {s.rideBooked
-            ? "Booked → will cancel"
-            : s.tasks.mobility === "Working"
-              ? "In progress → will stop"
-              : "Not called"}
+          {m.rideStatus}
+          <small>Cancellation fee: ¥0</small>
         </Row>
         <p className="footnote">
-          Demo cancellation: no fee. No real booking or charge is made.
+          {m.cancel === "all"
+            ? "Both tasks will stop after you confirm."
+            : "Your dinner plan will continue."}
         </p>
         <div className="button-row">
           <Button secondary disabled={!cancelActive} onClick={send("KEEP")}>
@@ -613,11 +616,9 @@ export function Card({
     return (
       <section className="card">
         <h3>Cancellation update</h3>
-        <Row label="Table">
-          {s.booked ? "Still booked" : "Cancelled · done"}
-        </Row>
-        <Row label="Ride">Cancelled · done</Row>
-        <span className="success-tag">No fee in this demo</span>
+        <Row label="Table">{m.tableStatus}</Row>
+        <Row label="Ride">{m.rideStatus}</Row>
+        <span className="success-tag">No fee</span>
       </section>
     );
   return null;

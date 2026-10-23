@@ -7,8 +7,8 @@ async function skip(p: Page) {
   if (await b.count()) await b.click();
 }
 async function toTranslation(p: Page) {
-  await p.goto("?flow=normal");
-  await p.getByRole("button", { name: "Use keyboard" }).click();
+  await p.goto("?flow=normal&debug=1");
+  await p.getByRole("textbox", { name: "Message Main Pal" }).click();
   await p.getByRole("button", { name: "Send message" }).click();
   await skip(p);
   await p.getByRole("button", { name: "Looks good", exact: true }).click();
@@ -82,7 +82,7 @@ test("new translate sheet: source, destination, speech, fullscreen, reverse repl
   );
   await d.getByRole("button", { name: "Close translation" }).click();
   await expect(p.getByRole("dialog")).toHaveCount(0);
-  await expect(p.getByText(/Driver reply \(demo\):/)).toBeVisible();
+  await expect(p.getByText(/Driver reply:/)).toBeVisible();
   await expect(
     p.getByRole("button", { name: "Translate", exact: true }),
   ).toBeEnabled();

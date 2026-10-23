@@ -90,6 +90,13 @@ export function Sheets({
       });
     close();
   };
+  const changes = [
+    draft.time !== s.plan.time ? draft.time : "",
+    draft.cuisine !== s.plan.cuisine ? draft.cuisine : "",
+    draft.party !== s.plan.party ? `${draft.party} people` : "",
+    draft.budget !== s.plan.budget ? `¥${draft.budget} / person` : "",
+    draft.ride !== s.plan.ride ? (draft.ride ? "Add ride" : "Dinner only") : "",
+  ].filter(Boolean);
   const changed = JSON.stringify(draft) !== JSON.stringify(s.plan);
   const r = sheet.value?.r || sheet.value || s.restaurant,
     p = sheet.value?.p || s.plan;
@@ -209,21 +216,26 @@ export function Sheets({
                   </button>
                 </div>
               </div>
-              <div className="edit-row">
-                <label htmlFor="cuisine">Cuisine</label>
-                <select
-                  id="cuisine"
-                  value={draft.cuisine}
-                  onChange={(e) =>
-                    setDraft({ ...draft, cuisine: e.target.value })
-                  }
+              <div className="cuisine-field">
+                <span id="cuisine-label">Cuisine</span>
+                <div
+                  className="chips"
+                  role="group"
+                  aria-labelledby="cuisine-label"
                 >
                   {["Shanghainese", "Cantonese", "Sichuan", "Hunan", "Any"].map(
                     (c) => (
-                      <option key={c}>{c}</option>
+                      <button
+                        key={c}
+                        aria-pressed={draft.cuisine === c}
+                        className={`chip ${draft.cuisine === c ? "selected" : ""}`}
+                        onClick={() => setDraft({ ...draft, cuisine: c })}
+                      >
+                        {c}
+                      </button>
                     ),
                   )}
-                </select>
+                </div>
               </div>
               <div className="edit-row">
                 <label htmlFor="budget">Budget / person</label>
@@ -259,7 +271,7 @@ export function Sheets({
               </div>
               <Button disabled={!changed || draft.budget < 50} onClick={submit}>
                 {sheet.value === "request"
-                  ? `Update request · ${draft.time}`
+                  ? `Update request · ${changes.join(" · ") || draft.time}`
                   : `Update · ${draft.cuisine} at ${draft.time}`}
               </Button>
             </>
@@ -279,7 +291,7 @@ export function Sheets({
                   >
                     <Pal
                       role={role}
-                      size={44}
+                      size={30}
                       state={
                         s.tasks[role] === "Done"
                           ? "done"
@@ -314,10 +326,6 @@ export function Sheets({
                   </div>
                 </div>
               ))}
-              <p className="footnote">
-                During handoff, the sender is large and the receiver is small.
-                Once it takes over, the receiver becomes the main character.
-              </p>
             </>
           )}
           {["address", "contact", "note"].includes(sheet.type) && (
@@ -360,10 +368,7 @@ export function Sheets({
               </Row>
               <Row label="Budget">~¥{r.price} / person</Row>
               <Row label="Address">{r.address}</Row>
-              <p className="footnote">
-                English menu · Foreign cards OK. Restaurant data and addresses
-                are illustrative demo content.
-              </p>
+              <p className="footnote">English menu · Foreign cards OK.</p>
               <Button secondary onClick={close}>
                 Back to choices
               </Button>
@@ -396,7 +401,6 @@ export function Sheets({
                 {r.name} · {r.cn}
               </h3>
               <p>{r.address}</p>
-              <p className="footnote">Demo confirmation only.</p>
             </>
           )}
           {sheet.type === "driver" && (
@@ -411,7 +415,7 @@ export function Sheets({
                 {r.name} · {r.cn}
               </Row>
               <p className="footnote">
-                Demo driver details. No real car has been called.
+                Show your plate number when meeting your driver.
               </p>
             </>
           )}

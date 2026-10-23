@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, type CSSProperties } from "react";
 import {
   AnimatePresence,
   motion,
@@ -15,6 +15,16 @@ import { Card, type Sheet } from "./components/Cards";
 import { Sheets } from "./components/Sheets";
 import { Profile } from "./screens/Profile";
 export default function App() {
+  const debug = new URLSearchParams(location.search).get("debug") === "1";
+  const [deviceScale, setDeviceScale] = useState(
+    Math.min(1, (window.innerHeight - 48) / 874),
+  );
+  useEffect(() => {
+    const resize = () =>
+      setDeviceScale(Math.min(1, (window.innerHeight - 48) / 874));
+    window.addEventListener("resize", resize);
+    return () => window.removeEventListener("resize", resize);
+  }, []);
   const initialFlow =
     new URLSearchParams(location.search).get("flow") === "exception"
       ? "exception"
@@ -174,234 +184,230 @@ export default function App() {
             Built for the Tencent design challenge.
           </p>
         </aside>
-        <section className="phone" aria-label="Pal mobile prototype">
-          <StatusBar />
-          {!started ? (
-            <div className="start-screen">
-              <div className="start-pals">
-                <Pal size={136} />
-              </div>
-              <span className="eyebrow">YOUR PAL IN SHANGHAI</span>
-              <h1>
-                A table for two.
-                <br />A ride to get there.
-              </h1>
-              <p>
-                Tell Main Pal what you need.
-                <br />
-                Your evening comes together.
-              </p>
-              <button
-                className="button primary"
-                onClick={() => begin("normal")}
-              >
-                Try the normal flow <ArrowRight size={18} />
-              </button>
-              <button
-                className="button secondary"
-                onClick={() => begin("exception")}
-              >
-                What if 7:00 PM is full?
-              </button>
-              <small>Interactive demo · nothing is booked or charged</small>
-              <div className="home-indicator" />
-            </div>
-          ) : (
-            <>
-              {profile && (
-                <Profile
-                  s={s}
-                  back={() => setProfile(false)}
-                  open={(type) => setSheet({ type })}
-                />
-              )}
-              <div className={profile ? "chat-view hidden" : "chat-view"}>
-                <NavBar
-                  s={s}
-                  onWho={() => setSheet({ type: "who" })}
-                  onMore={() => setMenu(!menu)}
-                  onBack={() => setStarted(false)}
-                />
-                <AnimatePresence>
-                  {menu && (
-                    <motion.div
-                      className="more-menu glass"
-                      initial={{ opacity: 0, y: -5 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      exit={{ opacity: 0 }}
-                    >
-                      <button
-                        onClick={() => {
-                          setProfile(true);
-                          setMenu(false);
-                        }}
-                      >
-                        <UserRound size={18} />
-                        Profile
-                      </button>
-                      <button
-                        onClick={() => {
-                          setStarted(false);
-                          setMenu(false);
-                        }}
-                      >
-                        Change demo flow
-                      </button>
-                      <button
-                        onClick={() => {
-                          begin(s.flow);
-                          setMenu(false);
-                        }}
-                      >
-                        Restart
-                      </button>
-                      <button
-                        onClick={() => {
-                          dispatch({ type: "PAUSE" });
-                          setMenu(false);
-                        }}
-                      >
-                        {s.paused ? "Resume timers" : "Pause timers"}
-                      </button>
-                    </motion.div>
-                  )}
-                </AnimatePresence>
-                <div
-                  className="chat-scroll"
-                  ref={chat}
-                  onScroll={() => {
-                    if (chat.current)
-                      nearBottom.current =
-                        chat.current.scrollHeight -
-                          chat.current.scrollTop -
-                          chat.current.clientHeight <
-                        120;
-                  }}
-                  onClick={(e) => {
-                    if (
-                      s.pending &&
-                      !s.paused &&
-                      !(e.target as HTMLElement).closest(
-                        "button,input,textarea,a,select",
-                      )
-                    )
-                      dispatch({ type: "TICK" });
-                  }}
+        <div
+          className="phone-stage"
+          style={{ "--device-scale": deviceScale } as CSSProperties}
+        >
+          <section className="phone" aria-label="Pal mobile prototype">
+            <StatusBar />
+            {!started ? (
+              <div className="start-screen">
+                <div className="start-pals">
+                  <Pal size={136} />
+                </div>
+                <span className="eyebrow">YOUR PAL IN SHANGHAI</span>
+                <h1>
+                  A table for two.
+                  <br />A ride to get there.
+                </h1>
+                <p>
+                  Tell Main Pal what you need.
+                  <br />
+                  Your evening comes together.
+                </p>
+                <button
+                  className="button primary"
+                  onClick={() => begin("normal")}
                 >
-                  <div
-                    className="conversation"
-                    role="log"
-                    aria-label="Conversation with Main Pal"
-                    aria-live="polite"
-                  >
-                    {s.messages.map((m, i) => (
+                  Try the normal flow <ArrowRight size={18} />
+                </button>
+                <button
+                  className="button secondary"
+                  onClick={() => begin("exception")}
+                >
+                  What if 7:00 PM is full?
+                </button>
+                <small>Your dinner and ride, in one conversation</small>
+                <div className="home-indicator" />
+              </div>
+            ) : (
+              <>
+                {profile && (
+                  <Profile
+                    s={s}
+                    back={() => setProfile(false)}
+                    open={(type) => setSheet({ type })}
+                  />
+                )}
+                <div className={profile ? "chat-view hidden" : "chat-view"}>
+                  <NavBar
+                    s={s}
+                    onWho={() => setSheet({ type: "who" })}
+                    onMore={() => setMenu(!menu)}
+                    onBack={() => setStarted(false)}
+                  />
+                  <AnimatePresence>
+                    {menu && (
                       <motion.div
-                        key={m.id}
-                        data-message={m.card || m.kind}
-                        className={`message message-${m.kind}`}
-                        initial={reduced ? false : { opacity: 0, y: 8 }}
+                        className="more-menu glass"
+                        initial={{ opacity: 0, y: -5 }}
                         animate={{ opacity: 1, y: 0 }}
-                        transition={{ duration: 0.2 }}
+                        exit={{ opacity: 0 }}
                       >
-                        {m.kind === "main" ? (
-                          <div className="bubble main-bubble">{m.text}</div>
-                        ) : m.kind === "alex" ? (
-                          <div className="alex-wrap">
-                            <div className="bubble alex-bubble">{m.text}</div>
-                            <motion.span
-                              key={
-                                activeReaction &&
+                        <button
+                          onClick={() => {
+                            setProfile(true);
+                            setMenu(false);
+                          }}
+                        >
+                          <UserRound size={18} />
+                          Profile
+                        </button>
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
+                  <div
+                    className="chat-scroll"
+                    ref={chat}
+                    onScroll={() => {
+                      if (chat.current)
+                        nearBottom.current =
+                          chat.current.scrollHeight -
+                            chat.current.scrollTop -
+                            chat.current.clientHeight <
+                          120;
+                    }}
+                    onClick={(e) => {
+                      if (
+                        s.pending &&
+                        !s.paused &&
+                        !(e.target as HTMLElement).closest(
+                          "button,input,textarea,a,select",
+                        )
+                      )
+                        dispatch({ type: "TICK" });
+                    }}
+                  >
+                    <div
+                      className="conversation"
+                      role="log"
+                      aria-label="Conversation with Main Pal"
+                      aria-live="polite"
+                    >
+                      {s.messages.map((m, i) => (
+                        <motion.div
+                          key={m.id}
+                          data-message={m.card || m.kind}
+                          className={`message message-${m.kind}`}
+                          initial={reduced ? false : { opacity: 0, y: 8 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          transition={{ duration: 0.2 }}
+                        >
+                          {m.kind === "main" ? (
+                            <div className="bubble main-bubble">{m.text}</div>
+                          ) : m.kind === "alex" ? (
+                            <div className="alex-wrap">
+                              <div className="bubble alex-bubble">{m.text}</div>
+                              <motion.span
+                                key={
+                                  activeReaction &&
+                                  i ===
+                                    s.messages
+                                      .map((x) => x.kind)
+                                      .lastIndexOf("alex")
+                                    ? "reading"
+                                    : "done"
+                                }
+                                className="reaction"
+                                initial={reduced ? false : { scale: 0.6 }}
+                                animate={{ scale: 1 }}
+                              >
+                                {activeReaction &&
                                 i ===
                                   s.messages
                                     .map((x) => x.kind)
                                     .lastIndexOf("alex")
-                                  ? "reading"
-                                  : "done"
-                              }
-                              className="reaction"
-                              initial={reduced ? false : { scale: 0.6 }}
-                              animate={{ scale: 1 }}
-                            >
-                              {activeReaction &&
-                              i ===
-                                s.messages
-                                  .map((x) => x.kind)
-                                  .lastIndexOf("alex")
-                                ? "👀"
-                                : "👍"}
-                            </motion.span>
-                          </div>
-                        ) : m.kind === "event" ? (
-                          <div className="event">
-                            {m.text}
-                            {m.role && (
-                              <>
-                                {" "}
-                                ·{" "}
-                                <Pal
-                                  role={m.role as Role}
-                                  state="mini"
-                                  size={16}
-                                />
-                                <span>
-                                  {m.role === "dining" ? "Dining" : "Mobility"}{" "}
-                                  Pal
-                                </span>
-                              </>
-                            )}
-                          </div>
-                        ) : (
-                          <Card
-                            m={m}
-                            s={s}
-                            dispatch={dispatch}
-                            open={setSheet}
-                          />
-                        )}
-                      </motion.div>
-                    ))}
+                                  ? "👀"
+                                  : "👍"}
+                              </motion.span>
+                            </div>
+                          ) : m.kind === "event" ? (
+                            <div className="event">
+                              {m.text?.includes("Dining & Mobility") ? (
+                                <>
+                                  {m.text.split(" · ")[0]} ·{" "}
+                                  <Pal role="dining" state="mini" size={16} />
+                                  <span>Dining Pal</span>
+                                  <span>&</span>
+                                  <Pal role="mobility" state="mini" size={16} />
+                                  <span>Mobility Pal</span>
+                                </>
+                              ) : (
+                                m.text
+                              )}
+                              {m.role && (
+                                <>
+                                  {" "}
+                                  ·{" "}
+                                  <Pal
+                                    role={m.role as Role}
+                                    state="mini"
+                                    size={16}
+                                  />
+                                  <span>
+                                    {m.role === "dining"
+                                      ? "Dining"
+                                      : "Mobility"}{" "}
+                                    Pal
+                                  </span>
+                                </>
+                              )}
+                            </div>
+                          ) : (
+                            <Card
+                              m={m}
+                              s={s}
+                              dispatch={dispatch}
+                              open={setSheet}
+                            />
+                          )}
+                        </motion.div>
+                      ))}
+                    </div>
                   </div>
+                  <InputBar
+                    key={`${s.flow}-${started}`}
+                    s={s}
+                    onSend={send}
+                    onAdd={() => setSheet({ type: "actions" })}
+                  />
                 </div>
-                <InputBar
-                  key={s.flow}
-                  s={s}
-                  onSend={send}
-                  onAdd={() => setSheet({ type: "actions" })}
-                />
-              </div>
-            </>
-          )}
-          <AnimatePresence>
-            {sheet && (
-              <Sheets
-                key={sheet.type}
-                sheet={sheet}
-                close={() => setSheet(null)}
-                s={s}
-                dispatch={dispatch}
-              />
+              </>
             )}
-          </AnimatePresence>
-        </section>
-        <div className="mobile-demo-controls">
-          <button
-            onClick={() => {
-              setStarted(false);
-              setSheet(null);
-            }}
-          >
-            Flows
-          </button>
-          <button onClick={() => begin(s.flow)}>Restart</button>
-          <button onClick={() => dispatch({ type: "PAUSE" })}>
-            {s.paused ? "Resume" : "Pause"}
-          </button>
-          {s.pending && (
-            <button onClick={() => dispatch({ type: "TICK" })}>
-              Skip wait
-            </button>
-          )}
+            <AnimatePresence>
+              {sheet && (
+                <Sheets
+                  key={sheet.type}
+                  sheet={sheet}
+                  close={() => setSheet(null)}
+                  s={s}
+                  dispatch={dispatch}
+                />
+              )}
+            </AnimatePresence>
+          </section>
         </div>
+        {debug && !sheet && (
+          <div className="mobile-demo-controls">
+            <button
+              onClick={() => {
+                setStarted(false);
+                setSheet(null);
+              }}
+            >
+              Flows
+            </button>
+            <button onClick={() => begin(s.flow)}>Restart</button>
+            <button onClick={() => dispatch({ type: "PAUSE" })}>
+              {s.paused ? "Resume" : "Pause"}
+            </button>
+            {s.pending && (
+              <button onClick={() => dispatch({ type: "TICK" })}>
+                Skip wait
+              </button>
+            )}
+          </div>
+        )}
       </main>
     </MotionConfig>
   );

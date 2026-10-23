@@ -16,7 +16,7 @@ npx playwright install chromium webkit
 npm test
 ```
 
-Desktop renders a 402 × 874 device. Mobile uses the viewport and safe-area insets. The start menu selects Normal or Exception; Restart, Pause, and Skip wait are available as demo controls. Keyboard mode starts with the sample request. Browser speech recognition is used when available; otherwise the input explains the limitation and offers editable text. No microphone data is sent to an application backend.
+Desktop renders a 402 × 874 device. Mobile uses the viewport and safe-area insets. The start menu selects Normal or Exception; Restart, Pause, and Skip wait are available as demo controls. Focusing the initial message field fills the sample request. Browser speech recognition is used when available; otherwise the input explains the limitation and offers editable text. No microphone data is sent to an application backend.
 
 ## Implemented
 
@@ -29,17 +29,21 @@ Desktop renders a 402 × 874 device. Mobile uses the viewport and safe-area inse
 - Updated bilingual Translate Sheet: English/Chinese direction switching, destination-aware copy, browser speech playback, full-screen display, and a clearly labeled sample driver reply retained in chat. Matches Figma nodes `199:9863` and `199:9897`.
 - Real Figma-exported restaurant, car, map, avatar, and Pal artwork served locally.
 
-## Latest Pal decision overrides older spec animation
+## Refined interaction rules
 
-Main is green, Dining orange, Mobility blue. During task transfer the sender is large and the receiver small (approximately 1 : 0.47). The receiver then grows into the lead role while the sender exits. Specialists do not remain permanent small sidekicks. Main Pal still owns the written conversation, so the title stays “Main Pal”. The reduced-motion version uses static states and text.
+The October refine checklist takes precedence over the original spec. The header always returns to green Main Pal: Idle when off, Done on completion, Attention when a decision is needed. During specialist work, Main stays large with a small incoming partner; Dining leads when both work. Independent orange/blue specialists remain in task-specific content.
 
-The newer Figma role colors (#FFAA7C / #2898FF) are retained in the actual character exports. Green action tokens follow the supplied spec.
+The text-first composer opens typing on focus and returns to idle after send. Recording uses browser speech recognition when available, with stop/send controls and a text fallback. The reaction badge keeps the user-approved right-edge alignment.
+
+Desktop scales the 402 × 874 phone to fit the viewport. Flow selection, restart, pause and skip live in the desktop panel; mobile debugging is available only with `?debug=1`. The in-phone More menu contains Profile only.
+
+Cancelling the ride preserves pending dinner confirmations and restores dinner processing. Cancellation cards report each task separately. Restaurant names, economy fares, journey durations and prices match the saved Figma design contexts; timing and all displayed fare values share one route function.
 
 ## Prototype boundaries
 
-Translation text and driver replies are scripted demo content, not live translation. Chinese playback uses available browser voices.
+Translation text and driver replies are scripted demo content, not live translation. Driver input uses a sample reply; it does not record or translate arbitrary speech. Chinese playback uses available browser voices.
 
-No backend, payment, location tracking, real restaurant bookings or car dispatch. Confirmation numbers, contact details, restaurant addresses, drivers, quotes and routes are illustrative. Restaurant and route state is deterministic. The map is a Figma image with exported route/pin layers, not live navigation. The cancellation fee is a simulated no-fee outcome.
+No backend, payment, location tracking, real restaurant bookings or car dispatch. Confirmation numbers, contact details, restaurant addresses, drivers, quotes and routes are illustrative. Restaurant and route state is deterministic. Comfort/Premium quotes for secondary restaurants not specified in Figma are illustrative extensions; source-specified quotes for Longtang, Plane Tree and Pearl are retained. The map is a Figma image with exported route/pin layers, not live navigation. The cancellation fee is a simulated no-fee outcome.
 
 English UI includes Chinese names/addresses for showing to staff. Additional cuisines beyond Shanghainese/Cantonese return a no-results view instead of pretending that an unrelated restaurant matches. New Pal setup is informational only.
 

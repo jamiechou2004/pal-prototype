@@ -236,3 +236,7 @@
     line-height: 34px;
   }
 }
+
+.reverse .translation-actions .button {
+  flex: 1;
+}

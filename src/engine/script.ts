@@ -58,40 +58,40 @@ export const restaurants: Restaurant[] = [
   {
     id: "shikumen",
     name: "Shikumen Kitchen",
-    cn: "石库门家宴",
-    price: 180,
+    cn: "石库门小厨",
+    price: 185,
     photo: "4be00.png",
-    minutes: 20,
-    distance: "2.1",
+    minutes: 26,
+    distance: "2.4",
     address: "28 Changle Road · 长乐路28号",
   },
   {
     id: "lane18",
-    name: "Lane 18",
-    cn: "十八弄",
-    price: 150,
+    name: "Lane 18 Canteen",
+    cn: "十八弄食堂",
+    price: 140,
     photo: "fc5a4.png",
     minutes: 18,
-    distance: "1.6",
+    distance: "1.5",
     address: "18 Nanchang Road · 南昌路18号",
   },
   {
     id: "planetree",
     name: "Plane Tree House",
     cn: "梧桐小院",
-    price: 170,
+    price: 175,
     photo: "87ffc.png",
     minutes: 15,
-    distance: "1.4",
+    distance: "1.2",
     address: "36 Fuxing Road · 复兴路36号",
   },
   {
     id: "shanghaitable",
     name: "Shanghai Table",
     cn: "沪上一桌",
-    price: 180,
+    price: 150,
     photo: "51536.png",
-    minutes: 17,
+    minutes: 20,
     distance: "1.6",
     address: "22 Shaanxi Road · 陕西路22号",
   },
@@ -101,8 +101,8 @@ export const restaurants: Restaurant[] = [
     cn: "滨江小馆",
     price: 190,
     photo: "19ebd.png",
-    minutes: 19,
-    distance: "2.0",
+    minutes: 25,
+    distance: "2.1",
     address: "8 Zhongshan Road · 中山路8号",
   },
   {
@@ -121,8 +121,8 @@ export const restaurants: Restaurant[] = [
     cn: "粤香楼",
     price: 180,
     photo: "4c08b.png",
-    minutes: 16,
-    distance: "1.5",
+    minutes: 20,
+    distance: "1.6",
     address: "58 Huaihai Road · 淮海路58号",
   },
   {
@@ -131,8 +131,8 @@ export const restaurants: Restaurant[] = [
     cn: "港湾小厨",
     price: 190,
     photo: "1d052.png",
-    minutes: 18,
-    distance: "1.8",
+    minutes: 25,
+    distance: "2.1",
     address: "38 Ruijin Road · 瑞金路38号",
   },
 ];
@@ -143,7 +143,7 @@ export const defaultPlan: Plan = {
   budget: 200,
   ride: true,
   pickup: "The Shanghai EDITION · 199 Nanjing Road East 南京东路199号",
-  contact: "Alex · +1 202 555 0148",
+  contact: "Alex · ••• 0148",
   note: "I don't speak Chinese. An English menu would be great.",
 };
 export const initialRequest =
@@ -151,25 +151,54 @@ export const initialRequest =
 export const rideNames = ["Economy", "Comfort", "Premium"];
 export function route(r: Restaurant, p: Plan) {
   const group = restaurants.findIndex((x) => x.id === r.id);
-  const ranges =
-    group >= 6
-      ? ["20–26", "30–36", "48–60"]
-      : group >= 3
-        ? ["24–30", "34–42", "55–70"]
-        : ["32–38", "45–55", "70–90"];
-  const base = group >= 6 ? 23 : group >= 3 ? 27 : 36;
+  // Restaurant-specific route catalogue; keep all fare displays on this source.
+  const fares: Record<string, [string[], number[]]> = {
+    longtang: [
+      ["32–38", "45–55", "70–90"],
+      [36, 50, 80],
+    ],
+    shikumen: [
+      ["38–45", "54–64", "80–100"],
+      [42, 59, 90],
+    ],
+    lane18: [
+      ["28–34", "40–48", "62–78"],
+      [31, 44, 70],
+    ],
+    planetree: [
+      ["24–30", "34–42", "55–70"],
+      [27, 38, 63],
+    ],
+    shanghaitable: [
+      ["30–36", "42–50", "65–82"],
+      [33, 46, 74],
+    ],
+    riverside: [
+      ["35–42", "50–60", "76–94"],
+      [39, 55, 85],
+    ],
+    pearl: [
+      ["20–26", "30–36", "48–60"],
+      [23, 33, 54],
+    ],
+    canton: [
+      ["30–36", "42–50", "65–82"],
+      [33, 46, 74],
+    ],
+    harbour: [
+      ["35–42", "50–60", "76–94"],
+      [39, 55, 85],
+    ],
+  };
+  const [ranges, estimates] = fares[r.id] || fares.longtang;
   const [hh, mm] = p.time.split(" ")[0].split(":").map(Number);
-  const total = ((hh % 12) + 12) * 60 + mm;
+  const total = ((hh % 12) + (p.time.endsWith("PM") ? 12 : 0)) * 60 + mm;
   const format = (n: number) =>
-    `${Math.floor(n / 60) % 12 || 12}:${String(n % 60).padStart(2, "0")} PM`;
-  const departure = total - (group >= 6 ? 12 : group >= 3 ? 15 : 25);
+    `${Math.floor(((n + 1440) % 1440) / 60) % 12 || 12}:${String((n + 1440) % 60).padStart(2, "0")} ${(n + 1440) % 1440 >= 720 ? "PM" : "AM"}`;
+  const departure = total - r.minutes - (group < 3 ? 3 : 0);
   return {
     ranges,
-    estimates: [
-      base,
-      group >= 6 ? 33 : group >= 3 ? 38 : 50,
-      group >= 6 ? 54 : group >= 3 ? 63 : 80,
-    ],
+    estimates,
     leave: format(departure),
     arrive: format(departure + r.minutes),
     minutes: r.minutes,
@@ -204,6 +233,8 @@ export type Message = {
   carType?: number;
   carIndex?: number;
   result?: string;
+  tableStatus?: string;
+  rideStatus?: string;
 };
 export type Header = {
   branch: Branch;
@@ -233,6 +264,9 @@ export type State = {
   thinking: string;
   cancelPrompt?: "ride" | "all";
   resumeStep?: Step;
+  resumeDining?: TaskStatus;
+  cancelledCalledRide?: boolean;
+  findingMore?: boolean;
   resumePending?: { id: number; ms: number };
   cancelResult?: string;
   paused: boolean;
