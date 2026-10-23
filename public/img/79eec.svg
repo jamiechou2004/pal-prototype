@@ -1,0 +1,12 @@
+<svg preserveAspectRatio="none" overflow="visible" style="display: block;" width="32" height="32" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
+<g id="Pal / rounded balanced silhouette">
+<path id="Vector" d="M16 4.53333C22.3328 4.53333 27.4667 9.30893 27.4667 15.2C27.4667 17.7067 26.54 20.0107 24.9867 21.832L26.2933 24.9467C26.48 25.4 26.0533 25.8267 25.6133 25.6133L22.2133 23.9867C20.424 25.176 18.2907 25.8667 16 25.8667C9.6672 25.8667 4.53333 21.0911 4.53333 15.2C4.53333 9.30893 9.6672 4.53333 16 4.53333Z" fill="#07C160"/>
+<g id="Group">
+<path id="Vector_2" d="M11.3333 15.6C11.3333 13.4667 14.2667 13.4667 14.2667 15.6M17.7333 15.6C17.7333 13.4667 20.6667 13.4667 20.6667 15.6" stroke-width="0.933333" stroke-linecap="round" stroke="#FCFBF5"/>
+</g>
+<g id="Vector_3">
+<path d="M26.8 8.13333L28.2667 7.33333ZM26.4 5.6L27.2 4.13333Z" fill="black"/>
+<path d="M26.8 8.13333L28.2667 7.33333M26.4 5.6L27.2 4.13333" stroke-width="0.533333" stroke-linecap="round" stroke="#07C160"/>
+</g>
+</g>
+</svg>

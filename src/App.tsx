@@ -1,0 +1,408 @@
+import { useEffect, useRef, useState } from "react";
+import {
+  AnimatePresence,
+  motion,
+  MotionConfig,
+  useReducedMotion,
+} from "framer-motion";
+import { Play, Pause, RotateCcw, ArrowRight, UserRound } from "lucide-react";
+import { useChat } from "./engine/useChat";
+import { intent, parsePlan } from "./engine/intents";
+import { type Role } from "./engine/script";
+import { Pal } from "./components/Pal";
+import { NavBar, StatusBar, InputBar } from "./components/Chrome";
+import { Card, type Sheet } from "./components/Cards";
+import { Sheets } from "./components/Sheets";
+import { Profile } from "./screens/Profile";
+export default function App() {
+  const initialFlow =
+    new URLSearchParams(location.search).get("flow") === "exception"
+      ? "exception"
+      : "normal";
+  const { state: s, dispatch } = useChat(initialFlow),
+    [started, setStarted] = useState(
+      new URLSearchParams(location.search).has("flow"),
+    ),
+    [sheet, setSheet] = useState<Sheet>(null),
+    [profile, setProfile] = useState(false),
+    [menu, setMenu] = useState(false);
+  const reduced = useReducedMotion(),
+    chat = useRef<HTMLDivElement>(null),
+    nearBottom = useRef(true),
+    lastLength = useRef(0);
+  useEffect(() => {
+    if (chat.current && s.messages.length !== lastLength.current) {
+      chat.current.scrollTo({
+        top: chat.current.scrollHeight,
+        behavior: reduced ? "instant" : "smooth",
+      });
+      lastLength.current = s.messages.length;
+    }
+  }, [s.messages.length, reduced]);
+  useEffect(() => {
+    const listener = (e: KeyboardEvent) => {
+      if (e.key === "Escape") {
+        setMenu(false);
+      }
+    };
+    window.addEventListener("keydown", listener);
+    return () => window.removeEventListener("keydown", listener);
+  }, []);
+  function begin(flow: "normal" | "exception") {
+    dispatch({ type: "RESET", value: flow });
+    setStarted(true);
+    setProfile(false);
+    setSheet(null);
+    const u = new URL(location.href);
+    u.searchParams.set("flow", flow);
+    history.replaceState(null, "", u);
+    lastLength.current = 0;
+  }
+  function send(text: string) {
+    const i = intent(text);
+    if (i === "cancelAll" || i === "cancelRide") {
+      dispatch({
+        type: "CANCEL_PROMPT",
+        value: i === "cancelAll" ? "all" : "ride",
+      });
+      return;
+    }
+    if (s.step === "welcome") {
+      dispatch({
+        type: "SEND_REQUEST",
+        value: { text, plan: parsePlan(text) },
+      });
+      return;
+    }
+    if (s.step === "exception") {
+      if (i === "later") {
+        dispatch({ type: "CHOOSE_A", value: text });
+        return;
+      }
+      if (i === "another") {
+        dispatch({ type: "CHOOSE_B", value: text });
+        return;
+      }
+      if (i === "customize") {
+        setSheet({ type: "edit", value: { prefill: parsePlan(text) } });
+        return;
+      }
+    }
+    if (s.step === "denied") {
+      setSheet({ type: "address" });
+      return;
+    }
+    dispatch({ type: "TEXT", value: text });
+  }
+  const activeReaction = [
+    "reading",
+    "lining",
+    "bookingWork",
+    "updating",
+    "findingCars",
+    "calling",
+  ].includes(s.step);
+  return (
+    <MotionConfig reducedMotion="user">
+      <main className="workspace">
+        <aside className="desktop-intro">
+          <a
+            className="wordmark"
+            href="#"
+            onClick={(e) => {
+              e.preventDefault();
+              setStarted(false);
+            }}
+          >
+            pal<span>●</span>
+          </a>
+          <p className="eyebrow">A LITTLE HELP. A BETTER EVENING.</p>
+          <h1>
+            Your plans.
+            <br />
+            In good hands.
+          </h1>
+          <p className="intro-copy">
+            One conversation, the right Pals.
+            <br />
+            Dinner and a ride, thoughtfully coordinated.
+          </p>
+          <div className="intro-pals">
+            <Pal size={64} />
+            <Pal role="dining" size={48} />
+            <Pal role="mobility" size={48} />
+          </div>
+          <div className="demo-controls">
+            <span className="eyebrow">INTERACTIVE PROTOTYPE</span>
+            <button
+              className={s.flow === "normal" && started ? "chosen" : ""}
+              onClick={() => begin("normal")}
+            >
+              Normal flow <ArrowRight size={16} />
+            </button>
+            <button
+              className={s.flow === "exception" && started ? "chosen" : ""}
+              onClick={() => begin("exception")}
+            >
+              Exception · 7:00 PM full <ArrowRight size={16} />
+            </button>
+            <div className="control-row">
+              <button onClick={() => begin(s.flow)}>
+                <RotateCcw size={14} />
+                Restart
+              </button>
+              <button
+                disabled={!started}
+                onClick={() => dispatch({ type: "PAUSE" })}
+              >
+                {s.paused ? <Play size={14} /> : <Pause size={14} />}{" "}
+                {s.paused ? "Resume" : "Pause"}
+              </button>
+            </div>
+            {s.pending && (
+              <button
+                className="skip"
+                onClick={() => dispatch({ type: "TICK" })}
+              >
+                Skip waiting →
+              </button>
+            )}
+          </div>
+          <p className="demo-note">
+            Design prototype · no real bookings or charges.
+            <br />
+            Built for the Tencent design challenge.
+          </p>
+        </aside>
+        <section className="phone" aria-label="Pal mobile prototype">
+          <StatusBar />
+          {!started ? (
+            <div className="start-screen">
+              <div className="start-pals">
+                <Pal size={136} />
+              </div>
+              <span className="eyebrow">YOUR PAL IN SHANGHAI</span>
+              <h1>
+                A table for two.
+                <br />A ride to get there.
+              </h1>
+              <p>
+                Tell Main Pal what you need.
+                <br />
+                Your evening comes together.
+              </p>
+              <button
+                className="button primary"
+                onClick={() => begin("normal")}
+              >
+                Try the normal flow <ArrowRight size={18} />
+              </button>
+              <button
+                className="button secondary"
+                onClick={() => begin("exception")}
+              >
+                What if 7:00 PM is full?
+              </button>
+              <small>Interactive demo · nothing is booked or charged</small>
+              <div className="home-indicator" />
+            </div>
+          ) : (
+            <>
+              {profile && (
+                <Profile
+                  s={s}
+                  back={() => setProfile(false)}
+                  open={(type) => setSheet({ type })}
+                />
+              )}
+              <div className={profile ? "chat-view hidden" : "chat-view"}>
+                <NavBar
+                  s={s}
+                  onWho={() => setSheet({ type: "who" })}
+                  onMore={() => setMenu(!menu)}
+                  onBack={() => setStarted(false)}
+                />
+                <AnimatePresence>
+                  {menu && (
+                    <motion.div
+                      className="more-menu glass"
+                      initial={{ opacity: 0, y: -5 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      exit={{ opacity: 0 }}
+                    >
+                      <button
+                        onClick={() => {
+                          setProfile(true);
+                          setMenu(false);
+                        }}
+                      >
+                        <UserRound size={18} />
+                        Profile
+                      </button>
+                      <button
+                        onClick={() => {
+                          setStarted(false);
+                          setMenu(false);
+                        }}
+                      >
+                        Change demo flow
+                      </button>
+                      <button
+                        onClick={() => {
+                          begin(s.flow);
+                          setMenu(false);
+                        }}
+                      >
+                        Restart
+                      </button>
+                      <button
+                        onClick={() => {
+                          dispatch({ type: "PAUSE" });
+                          setMenu(false);
+                        }}
+                      >
+                        {s.paused ? "Resume timers" : "Pause timers"}
+                      </button>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+                <div
+                  className="chat-scroll"
+                  ref={chat}
+                  onScroll={() => {
+                    if (chat.current)
+                      nearBottom.current =
+                        chat.current.scrollHeight -
+                          chat.current.scrollTop -
+                          chat.current.clientHeight <
+                        120;
+                  }}
+                  onClick={(e) => {
+                    if (
+                      s.pending &&
+                      !s.paused &&
+                      !(e.target as HTMLElement).closest(
+                        "button,input,textarea,a,select",
+                      )
+                    )
+                      dispatch({ type: "TICK" });
+                  }}
+                >
+                  <div
+                    className="conversation"
+                    role="log"
+                    aria-label="Conversation with Main Pal"
+                    aria-live="polite"
+                  >
+                    {s.messages.map((m, i) => (
+                      <motion.div
+                        key={m.id}
+                        data-message={m.card || m.kind}
+                        className={`message message-${m.kind}`}
+                        initial={reduced ? false : { opacity: 0, y: 8 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ duration: 0.2 }}
+                      >
+                        {m.kind === "main" ? (
+                          <div className="bubble main-bubble">{m.text}</div>
+                        ) : m.kind === "alex" ? (
+                          <div className="alex-wrap">
+                            <div className="bubble alex-bubble">{m.text}</div>
+                            <motion.span
+                              key={
+                                activeReaction &&
+                                i ===
+                                  s.messages
+                                    .map((x) => x.kind)
+                                    .lastIndexOf("alex")
+                                  ? "reading"
+                                  : "done"
+                              }
+                              className="reaction"
+                              initial={reduced ? false : { scale: 0.6 }}
+                              animate={{ scale: 1 }}
+                            >
+                              {activeReaction &&
+                              i ===
+                                s.messages
+                                  .map((x) => x.kind)
+                                  .lastIndexOf("alex")
+                                ? "👀"
+                                : "👍"}
+                            </motion.span>
+                          </div>
+                        ) : m.kind === "event" ? (
+                          <div className="event">
+                            {m.text}
+                            {m.role && (
+                              <>
+                                {" "}
+                                ·{" "}
+                                <Pal
+                                  role={m.role as Role}
+                                  state="mini"
+                                  size={16}
+                                />
+                                <span>
+                                  {m.role === "dining" ? "Dining" : "Mobility"}{" "}
+                                  Pal
+                                </span>
+                              </>
+                            )}
+                          </div>
+                        ) : (
+                          <Card
+                            m={m}
+                            s={s}
+                            dispatch={dispatch}
+                            open={setSheet}
+                          />
+                        )}
+                      </motion.div>
+                    ))}
+                  </div>
+                </div>
+                <InputBar
+                  key={s.flow}
+                  s={s}
+                  onSend={send}
+                  onAdd={() => setSheet({ type: "actions" })}
+                />
+              </div>
+            </>
+          )}
+          <AnimatePresence>
+            {sheet && (
+              <Sheets
+                key={sheet.type}
+                sheet={sheet}
+                close={() => setSheet(null)}
+                s={s}
+                dispatch={dispatch}
+              />
+            )}
+          </AnimatePresence>
+        </section>
+        <div className="mobile-demo-controls">
+          <button
+            onClick={() => {
+              setStarted(false);
+              setSheet(null);
+            }}
+          >
+            Flows
+          </button>
+          <button onClick={() => begin(s.flow)}>Restart</button>
+          <button onClick={() => dispatch({ type: "PAUSE" })}>
+            {s.paused ? "Resume" : "Pause"}
+          </button>
+          {s.pending && (
+            <button onClick={() => dispatch({ type: "TICK" })}>
+              Skip wait
+            </button>
+          )}
+        </div>
+      </main>
+    </MotionConfig>
+  );
+}

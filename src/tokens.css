@@ -1,0 +1,56 @@
+:root {
+  --white: #fff;
+  --gray-50: #f7f7f7;
+  --gray-100: #ededed;
+  --gray-200: #e5e5e5;
+  --gray-400: #b2b2b2;
+  --gray-500: #8c8c8c;
+  --gray-600: #6b6b6b;
+  --gray-900: #111;
+  --green-50: #e8f8ef;
+  --green-500: #07c160;
+  --green-600: #06ad56;
+  --green-700: #067a3e;
+  --orange-50: #fff3e3;
+  --orange-500: #fa9d3b;
+  --orange-700: #9c5508;
+  --red-50: #ffecec;
+  --red-500: #fa5151;
+  --red-700: #c92f2f;
+  --bg-primary: var(--white);
+  --bg-secondary: var(--gray-50);
+  --bg-tertiary: var(--gray-100);
+  --text-primary: var(--gray-900);
+  --text-secondary: var(--gray-600);
+  --text-tertiary: var(--gray-500);
+  --text-on-accent: var(--white);
+  --text-accent: var(--green-700);
+  --border-default: var(--gray-200);
+  --accent: var(--green-500);
+  --accent-pressed: var(--green-600);
+  --accent-subtle: var(--green-50);
+  --attention: var(--orange-500);
+  --attention-subtle: var(--orange-50);
+  --attention-text: var(--orange-700);
+  --error: var(--red-500);
+  --error-subtle: var(--red-50);
+  --error-text: var(--red-700);
+  --success-text: var(--green-700);
+  --neutral: var(--gray-400);
+  --pal-main: #07c160;
+  --pal-dining: #ffaa7c;
+  --pal-mobility: #2898ff;
+  --pal-ivory: #fcfbf5;
+  --pal-ink: #1f2b2e;
+  --pal-paper: #f6f7f4;
+  font-family:
+    -apple-system, "SF Pro Text", "Helvetica Neue", "PingFang SC", Arial,
+    sans-serif;
+  color: var(--text-primary);
+  font-size: 17px;
+  line-height: 24px;
+  letter-spacing: -0.43px;
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+}
