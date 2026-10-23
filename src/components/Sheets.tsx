@@ -446,7 +446,8 @@ export function Sheets({
                 Cancel everything
               </Button>
               <p className="footnote">
-                You'll review the consequences before anything is cancelled.
+                Booked tasks need your confirmation. Tasks still being planned
+                stop right away.
               </p>
             </>
           )}

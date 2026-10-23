@@ -1,10 +1,22 @@
 export type Intent =
-  "cancelAll" | "cancelRide" | "later" | "another" | "customize" | "unknown";
+  | "cancelAll"
+  | "cancelTable"
+  | "cancelRide"
+  | "later"
+  | "another"
+  | "customize"
+  | "unknown";
 export function intent(text: string): Intent {
   const t = text.toLowerCase();
-  if (/cancel.*(everything|both|all)|全部取消|取消全部/.test(t))
+  if (
+    /cancel.*(everything|both|all)|cancel (?:the )?(?:table (?:and|&) (?:the )?ride|ride (?:and|&) (?:the )?table)|全部取消|取消全部/.test(
+      t,
+    )
+  )
     return "cancelAll";
   if (/cancel.*(ride|car|taxi)|取消.*(车|出行)/.test(t)) return "cancelRide";
+  if (/cancel.*(table|dinner|reservation)|取消.*(餐|订位)/.test(t))
+    return "cancelTable";
   // Cuisine/budget take precedence over the time embedded in a customized request.
   if (
     /cantonese|sichuan|hunan|budget|cheaper|closer|粤菜|川菜|便宜|预算/.test(t)

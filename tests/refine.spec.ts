@@ -19,10 +19,12 @@ test("ride cancellation preserves pending 8 PM confirmation and dinner completio
 }) => {
   await request(p, "exception");
   await p.getByRole("button", { name: "Looks good", exact: true }).click();
+  await p
+    .getByRole("button", { name: "Allow for tonight", exact: true })
+    .click();
   await skip(p);
   await p.getByRole("button", { name: "Choose", exact: true }).first().click();
   await skip(p);
-  await p.getByRole("button", { name: "Allow", exact: true }).click();
   await p.getByRole("button", { name: "Share & book table" }).click();
   await skip(p);
   await expect(p.locator(".handoff-pal")).toHaveAttribute(
@@ -38,13 +40,6 @@ test("ride cancellation preserves pending 8 PM confirmation and dinner completio
     .getByRole("textbox", { name: "Message Main Pal" })
     .fill("cancel the ride");
   await p.getByRole("button", { name: "Send message" }).click();
-  await expect(p.locator('[data-message="cancel"]')).toContainText(
-    "Waiting for your confirmation",
-  );
-  await expect(p.locator('[data-message="cancel"]')).toContainText(
-    "Not called — nothing to cancel",
-  );
-  await p.getByRole("button", { name: "Cancel ride", exact: true }).click();
   await skip(p);
   await expect(
     p.getByRole("button", { name: "Book table for 8:00 PM" }),
@@ -56,7 +51,7 @@ test("ride cancellation preserves pending 8 PM confirmation and dinner completio
     "Main Pal done",
   );
   await skip(p);
-  await expect(p.getByText(/No ride has been called/)).toBeVisible();
+  await expect(p.locator(".tonight-plan").last()).toBeVisible();
   await expect(p.locator(".handoff-pal")).toHaveAttribute(
     "aria-label",
     "Main Pal idle",

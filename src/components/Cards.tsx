@@ -9,7 +9,8 @@ import {
   type State,
   type Restaurant,
 } from "../engine/script";
-import { asset } from "./Pal";
+import { TonightPlan } from "./TonightPlan";
+import { asset, Pal } from "./Pal";
 export type Sheet = { type: string; value?: any } | null;
 export function Button({
   children,
@@ -80,6 +81,44 @@ export function RouteMap({
     </div>
   );
 }
+const recommendations: Record<string, [string, string]> = {
+  longtang: [
+    "Best match",
+    "Quiet tables for two and classic red-braised pork. Closest to what you asked for.",
+  ],
+  shikumen: [
+    "Most atmosphere",
+    "Dinner inside a 1920s lane house. A bit pricier and livelier — for the old-Shanghai feel.",
+  ],
+  lane18: [
+    "Best value",
+    "Home-style dishes at ~¥140 and the shortest ride. Casual and busy, less quiet.",
+  ],
+  planetree: [
+    "Quietest",
+    "A peaceful courtyard and the shortest ride — good for an unhurried conversation.",
+  ],
+  shanghaitable: [
+    "Best for dumplings",
+    "A good choice for Shanghai dumplings and familiar local favourites within your budget.",
+  ],
+  riverside: [
+    "Best view",
+    "River views make dinner feel special, while keeping the meal under your budget.",
+  ],
+  pearl: [
+    "Best match",
+    "Cantonese dim sum for sharing, a short ride away and comfortably within your budget.",
+  ],
+  canton: [
+    "Roast meats",
+    "Classic Cantonese roast meats if you'd like a hearty dinner for two.",
+  ],
+  harbour: [
+    "Seafood",
+    "A seafood-focused Cantonese menu for a different take on tonight's dinner.",
+  ],
+};
 function Carousel({
   s,
   m,
@@ -126,6 +165,7 @@ function Carousel({
               src={asset(r.photo)}
               alt={`${r.name} signature dish`}
             />
+            <span className="recommend-badge">{recommendations[r.id][0]}</span>
             <h3>
               {r.name} <span lang="zh">{r.cn}</span>
             </h3>
@@ -133,6 +173,13 @@ function Carousel({
               {batch === 2 ? "Cantonese" : "Shanghainese"} · ~¥{r.price} /
               person
             </p>
+            <div className="recommend-why">
+              <div>
+                <Pal state="mini" size={18} />
+                <strong>Why Main Pal picked it</strong>
+              </div>
+              <p>{recommendations[r.id][1]}</p>
+            </div>
             <div className="tags">
               <span>English menu</span>
               <span>Foreign cards OK</span>
@@ -232,10 +279,6 @@ export function Card({
     r = m.restaurant!,
     rr = route(r, p);
   const send = (type: string, value?: any) => () => dispatch({ type, value });
-  const cancelActive =
-    s.messages.filter((x) => x.card === "cancel").at(-1)?.id === m.id &&
-    !!s.cancelPrompt &&
-    s.step !== "cancelling";
   const live = ["booking", "rideType"].includes(m.card || "") && active;
   const plan = live ? s.plan : p;
   if (m.card === "carousel")
@@ -269,26 +312,33 @@ export function Card({
   if (m.card === "permission")
     return (
       <section className="card">
-        <h3>Share your hotel address?</h3>
-        <Row label="With">Mobility Pal</Row>
-        <Row label="What">Hotel name and address, not your live location</Row>
-        <Row label="Used for">Route, travel time, fare, pickup point</Row>
-        <Row label="Valid">Tonight's plan only</Row>
-        <div className="button-row">
-          <Button
-            secondary
-            disabled={s.step !== "permission"}
-            onClick={send("PERMISSION", "deny")}
-          >
-            Don't allow
-          </Button>
-          <Button
-            disabled={s.step !== "permission"}
-            onClick={send("PERMISSION", "allow")}
-          >
-            Allow
-          </Button>
-        </div>
+        <h3>Share your location?</h3>
+        <Row label="With">Dining Pal · Mobility Pal</Row>
+        <Row label="What">Where you are now — or the hotel you type in</Row>
+        <Row label="Used for">
+          Nearby restaurants, travel time, fare, pickup point
+        </Row>
+        <Row label="Valid">Once, or until tonight's plan ends</Row>
+        <Button
+          disabled={s.step !== "permission"}
+          onClick={send("PERMISSION", "tonight")}
+        >
+          Allow for tonight
+        </Button>
+        <Button
+          secondary
+          disabled={s.step !== "permission"}
+          onClick={send("PERMISSION", "once")}
+        >
+          Allow once
+        </Button>
+        <button
+          className="text-action"
+          disabled={s.step !== "permission"}
+          onClick={send("PERMISSION", "deny")}
+        >
+          Don't allow
+        </button>
       </section>
     );
   if (m.card === "denied")
@@ -297,17 +347,17 @@ export function Card({
         <h3>You choose what to share</h3>
         <p>Dining can continue. Mobility waits for a pickup spot.</p>
         <Button
-          disabled={s.step !== "denied"}
+          disabled={!s.pickupNeeded}
           onClick={() => open({ type: "address" })}
         >
-          Enter address
+          Type hotel name
         </Button>
         <Button
           secondary
-          disabled={s.step !== "denied"}
+          disabled={!s.pickupNeeded}
           onClick={send("PERMISSION", "skip")}
         >
-          Skip ride
+          Skip the ride
         </Button>
       </section>
     );
@@ -389,7 +439,9 @@ export function Card({
           <span>
             <small>OPTION A</small>
             <strong>Take 8:00 PM</strong>
-            <span>Same restaurant · I'll move your ride to match</span>
+            <span>
+              Same restaurant, same route — only your departure moves.
+            </span>
           </span>
           <ChevronRight size={18} />
         </button>
@@ -432,13 +484,11 @@ export function Card({
         {p.ride && (
           <div className="soft-block">
             <small>Ride · Mobility Pal</small>
-            <b className="green">
-              Leave {rr.leave} · {r.minutes} min
-            </b>{" "}
+            <b className="green">Same route · leave {rr.leave}</b>{" "}
             <s className="footnote">
               {route(r, { ...p, time: "7:00 PM" }).leave}
             </s>
-            <p>Fare shown when you pick a car</p>
+            <p>Fare refreshed when you pick a car</p>
           </div>
         )}
         <Button
@@ -575,51 +625,7 @@ export function Card({
         </div>
       </section>
     );
-  if (m.card === "cancel")
-    return (
-      <section className="card">
-        <h3>
-          {m.cancel === "all"
-            ? "Cancel tonight’s plan?"
-            : "Cancel only the ride?"}
-        </h3>
-        <Row label="Table">
-          {m.tableStatus}
-          {m.cancel === "all" && (
-            <small>
-              {m.tableStatus?.startsWith("Booked")
-                ? "Cancellation fee: ¥0 · free until 6:00 PM"
-                : "No reservation charge"}
-            </small>
-          )}
-        </Row>
-        <Row label="Ride">
-          {m.rideStatus}
-          <small>Cancellation fee: ¥0</small>
-        </Row>
-        <p className="footnote">
-          {m.cancel === "all"
-            ? "Both tasks will stop after you confirm."
-            : "Your dinner plan will continue."}
-        </p>
-        <div className="button-row">
-          <Button secondary disabled={!cancelActive} onClick={send("KEEP")}>
-            Keep it
-          </Button>
-          <Button disabled={!cancelActive} onClick={send("CANCEL_CONFIRM")}>
-            {m.cancel === "all" ? "Cancel both" : "Cancel ride"}
-          </Button>
-        </div>
-      </section>
-    );
-  if (m.card === "cancelResult")
-    return (
-      <section className="card">
-        <h3>Cancellation update</h3>
-        <Row label="Table">{m.tableStatus}</Row>
-        <Row label="Ride">{m.rideStatus}</Row>
-        <span className="success-tag">No fee</span>
-      </section>
-    );
+  if (m.card === "tonight")
+    return <TonightPlan m={m} s={s} dispatch={dispatch} />;
   return null;
 }

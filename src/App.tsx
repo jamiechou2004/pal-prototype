@@ -12,6 +12,7 @@ import { type Role } from "./engine/script";
 import { Pal } from "./components/Pal";
 import { NavBar, StatusBar, InputBar } from "./components/Chrome";
 import { Card, type Sheet } from "./components/Cards";
+import { CancelFlow } from "./components/CancelFlow";
 import { Sheets } from "./components/Sheets";
 import { Profile } from "./screens/Profile";
 export default function App() {
@@ -119,10 +120,14 @@ export default function App() {
   }
   function send(text: string) {
     const i = intent(text);
-    if (i === "cancelAll" || i === "cancelRide") {
+    if (i === "cancelAll" || i === "cancelRide" || i === "cancelTable") {
       dispatch({
         type: "CANCEL_PROMPT",
-        value: i === "cancelAll" ? "all" : "ride",
+        value: {
+          target:
+            i === "cancelAll" ? "all" : i === "cancelTable" ? "table" : "ride",
+          text,
+        },
       });
       return;
     }
@@ -154,6 +159,8 @@ export default function App() {
     dispatch({ type: "TEXT", value: text });
   }
   const activeReaction = [
+    "checkingCancel",
+    "cancelling",
     "reading",
     "lining",
     "bookingWork",
@@ -362,7 +369,7 @@ export default function App() {
                         <motion.div
                           key={m.id}
                           data-message={m.card || m.kind}
-                          className={`message message-${m.kind}`}
+                          className={`message message-${m.kind} ${m.kind === "card" && m.card !== "tonight" && ((m.card === "denied" && !s.pickupNeeded) || (m.card !== "denied" && (m.version !== s.version || (m.card === "rideSuccess" && s.step === "complete")))) ? "answered-card" : ""}`}
                           initial={reduced ? false : { opacity: 0, y: 8 }}
                           animate={{ opacity: 1, y: 0 }}
                           transition={{ duration: 0.2 }}
@@ -437,6 +444,24 @@ export default function App() {
                           )}
                         </motion.div>
                       ))}
+                      {s.askAboutRide && (
+                        <div className="ride-followup">
+                          <button
+                            className="chip"
+                            onClick={() =>
+                              dispatch({ type: "CANCEL_PROMPT", value: "ride" })
+                            }
+                          >
+                            Cancel ride too
+                          </button>
+                          <button
+                            className="chip"
+                            onClick={() => dispatch({ type: "KEEP_RIDE" })}
+                          >
+                            Keep the ride
+                          </button>
+                        </div>
+                      )}
                     </div>
                   </div>
                   <InputBar
@@ -448,6 +473,7 @@ export default function App() {
                 </div>
               </>
             )}
+            {s.cancelStage && <CancelFlow s={s} dispatch={dispatch} />}
             <AnimatePresence>
               {sheet && (
                 <Sheets
@@ -461,7 +487,7 @@ export default function App() {
             </AnimatePresence>
           </section>
         </div>
-        {debug && !sheet && (
+        {debug && !sheet && !s.cancelStage && (
           <div className="mobile-demo-controls">
             <button
               onClick={() => {

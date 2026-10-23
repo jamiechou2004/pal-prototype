@@ -72,7 +72,7 @@ export function reducer(state: State, a: Action): State {
   const booking = () => {
     s.step = "booking";
     s.version++;
-    if (s.plan.ride) {
+    if (s.plan.ride && !s.pickupNeeded) {
       work("mobility", "Mobility · Route & fare");
       msg("event", "Messaged", "mobility");
     }
@@ -94,6 +94,118 @@ export function reducer(state: State, a: Action): State {
     );
     msg("event", "Messaged", "dining");
     wait("finding", 2200);
+  };
+  const summary = (tag: string, tableStatus?: string, rideStatus?: string) =>
+    card("tonight", {
+      planTag: tag,
+      updateNote: s.updateNote,
+      tableStatus:
+        tableStatus ||
+        (s.tableOutcome === "cancelled"
+          ? "✓ Cancelled by Dining Pal"
+          : s.tableOutcome === "stopped"
+            ? "— Not started"
+            : s.booked
+              ? tag === "All confirmed"
+                ? "✓ Table booked"
+                : "✓ Table kept"
+              : "— Not started"),
+      rideStatus:
+        rideStatus ||
+        (s.rideOutcome === "cancelled"
+          ? "✓ Cancelled by Mobility Pal"
+          : s.rideOutcome === "stopped" || !s.plan.ride
+            ? "— Not started, nothing to cancel"
+            : s.rideBooked
+              ? "✓ Driver on the way"
+              : "— Not started"),
+    });
+  const finishCancellation = () => {
+    const { table, ride } = s.cancelSelection!;
+    const hadTable = s.booked,
+      hadRide = s.rideBooked;
+    const resume = s.resumeStep,
+      pending = s.resumePending;
+    if (table) {
+      s.tableOutcome = hadTable ? "cancelled" : "stopped";
+      s.booked = false;
+      s.tasks.dining = hadTable ? "Cancelled" : "Stopped";
+      msg("event", hadTable ? "Message from" : "Stopped", "dining");
+    }
+    if (ride) {
+      s.askAboutRide = false;
+      s.rideOutcome = hadRide ? "cancelled" : "stopped";
+      s.rideBooked = false;
+      s.plan.ride = false;
+      s.pickupNeeded = false;
+      s.tasks.mobility = hadRide ? "Cancelled" : "Stopped";
+      msg("event", hadRide ? "Message from" : "Stopped", "mobility");
+    }
+    s.header = {
+      branch: "done",
+      role: table ? "dining" : "mobility",
+      both: table && ride,
+      activity:
+        table && ride
+          ? "Plan cancelled"
+          : ride
+            ? hadRide
+              ? "Ride cancelled"
+              : "Mobility Pal · Stopped"
+            : hadTable
+              ? "Table cancelled"
+              : "Dining Pal · Stopped",
+    };
+    msg(
+      "main",
+      table && ride
+        ? hadTable && hadRide
+          ? "Done — your table and your ride are both cancelled. Want me to find something else for tonight?"
+          : "Done — dinner and ride planning have stopped. Any confirmed booking has been cancelled."
+        : ride
+          ? hadRide
+            ? `Your ride is cancelled.${s.booked ? " Your table stays." : s.tableOutcome ? "" : " Dining can continue."}`
+            : `Got it — no ride. The car was never called, so there's nothing to cancel. ${s.booked ? "Your table stays." : "Dining can continue."}`
+          : hadTable
+            ? "Your table is cancelled."
+            : "Dining planning has stopped. No table was booked.",
+    );
+    s.cancelPrompt = undefined;
+    s.cancelStage = undefined;
+    s.cancelSelection = undefined;
+    s.resumeStep = undefined;
+    s.resumePending = undefined;
+    s.step = "complete";
+    if ((table && ride) || (ride && s.booked)) s.version++;
+    if (ride && !table && !s.booked && resume && !s.tableOutcome) {
+      s.step = resume;
+      s.pending = pending ? { ...pending, id: s.seq++ } : undefined;
+      s.tasks.dining = s.resumeDining || "Waiting for you";
+      s.messages = s.messages.map((m) =>
+        m.kind === "card" && m.version === s.version && m.plan
+          ? { ...m, plan: { ...m.plan, ride: false } }
+          : m,
+      );
+      if (resume === "denied") s.step = "complete";
+    } else if (table && !ride && s.plan.ride) {
+      s.askAboutRide = true;
+      if (
+        resume &&
+        ["calling", "findingCars", "cars", "rideType", "rideBooked"].includes(
+          resume,
+        )
+      ) {
+        s.step = resume;
+        s.pending = pending ? { ...pending, id: s.seq++ } : undefined;
+      }
+    }
+    s.messages = s.messages.filter((m) => m.planTag !== "Updating");
+    summary(!s.booked && !s.plan.ride ? "Cancelled" : "Updated");
+    if (s.askAboutRide)
+      msg(
+        "main",
+        `Your ride is still going to ${s.restaurant.name}. Cancel it too, or keep it?`,
+      );
   };
   switch (a.type) {
     case "PAUSE":
@@ -120,11 +232,13 @@ export function reducer(state: State, a: Action): State {
     case "APPROVE_REQUEST":
       if (s.step !== "request") return state;
       msg("alex", "Looks good");
+      s.version++;
+      s.step = "permission";
       msg(
         "main",
-        "Got it, I'm on it. Dining Pal is finding restaurants first. Once you pick one, Mobility Pal will plan your ride.",
+        "One quick thing: to find places near you and plan your ride, Dining Pal and Mobility Pal need your location.",
       );
-      find(s.plan.cuisine === "Cantonese" ? 2 : 0);
+      card("permission");
       break;
     case "MORE":
       if (s.step !== "restaurants") return state;
@@ -140,28 +254,50 @@ export function reducer(state: State, a: Action): State {
       s.thinking = s.plan.ride ? "Lining up your ride…" : "Checking the table…";
       wait("lining", 1400);
       break;
-    case "PERMISSION":
-      if (!["permission", "denied"].includes(s.step)) return state;
+    case "PERMISSION": {
+      if (s.step !== "permission" && !s.pickupNeeded) return state;
+      const initialPermission = s.step === "permission";
       if (a.value === "deny") {
         msg("alex", "Don't allow");
+        s.pickupNeeded = s.plan.ride;
         msg(
           "main",
-          "No problem. You can type your hotel name or pickup spot, or skip the ride for now.",
+          "No problem. I'll still find restaurants. For the ride, type your hotel name, or skip the ride for now.",
         );
-        s.step = "denied";
         card("denied");
+      } else if (a.value === "skip") {
+        s.plan.ride = false;
+        s.pickupNeeded = false;
+        s.rideOutcome = "stopped";
+        msg("alex", "Skip the ride");
       } else {
-        if (a.value === "skip") {
-          s.plan.ride = false;
-          msg("alex", "Skip the ride");
+        s.permission = true;
+        s.pickupNeeded = false;
+        if (["allow", "once", "tonight"].includes(a.value)) {
+          s.permissionScope = a.value === "once" ? "once" : "tonight";
+          msg("alex", a.value === "once" ? "Allow once" : "Allow for tonight");
         } else {
-          s.permission = true;
-          if (a.value !== "allow") s.plan.pickup = a.value;
-          msg("alex", a.value === "allow" ? "Allow" : `Use pickup: ${a.value}`);
+          s.plan.pickup = a.value;
+          msg("alex", `Use pickup: ${a.value}`);
         }
-        booking();
+      }
+      if (initialPermission) find(s.plan.cuisine === "Cantonese" ? 2 : 0);
+      else if (s.step === "denied") {
+        if (s.plan.ride) {
+          work("mobility", "Mobility · Route & fare");
+          msg("event", "Message to", "mobility");
+          wait("booked", 1200);
+        } else {
+          s.step = "complete";
+          msg(
+            "main",
+            "You're all set. Here's tonight's plan — I'll ping you if anything changes.",
+          );
+          summary("Updated");
+        }
       }
       break;
+    }
     case "BOOK":
       if (!["booking", "updated"].includes(s.step)) return state;
       msg(
@@ -174,8 +310,10 @@ export function reducer(state: State, a: Action): State {
       msg("event", "Messaged", "dining");
       work(
         "dining",
-        s.plan.ride ? "2 Pals working" : "Dining · Booking table",
-        s.plan.ride,
+        s.plan.ride && !s.pickupNeeded
+          ? "2 Pals working"
+          : "Dining · Booking table",
+        s.plan.ride && !s.pickupNeeded,
       );
       wait("bookingWork", 3000);
       break;
@@ -183,21 +321,26 @@ export function reducer(state: State, a: Action): State {
       if (s.step !== "exception") return state;
       msg("alex", a.value || "Take 8:00 PM");
       s.plan.time = "8:00 PM";
+      s.updateNote = "Plan updated from 7:00 PM to 8:00 PM";
       s.exceptionResolved = true;
       s.version++;
       msg(
         "main",
-        `Got it — 8:00 PM at ${s.restaurant.name}${s.plan.ride ? `, and I'll move your ride to ${route(s.restaurant, s.plan).leave}. Updating both Pals…` : ". Updating Dining Pal…"} Nothing is booked yet.`,
+        `Got it — 8:00 PM at ${s.restaurant.name}${s.plan.ride && !s.pickupNeeded ? `, and I'll move your ride to ${route(s.restaurant, s.plan).leave}. Updating both Pals…` : ". Updating Dining Pal…"} Nothing is booked yet.`,
       );
       msg(
         "event",
-        s.plan.ride ? "Messaged · Dining & Mobility" : "Messaged",
-        s.plan.ride ? undefined : "dining",
+        s.plan.ride && !s.pickupNeeded
+          ? "Messaged · Dining & Mobility"
+          : "Messaged",
+        s.plan.ride && !s.pickupNeeded ? undefined : "dining",
       );
       work(
         "dining",
-        s.plan.ride ? "Updating both to 8 PM" : "Dining · Updating to 8 PM",
-        s.plan.ride,
+        s.plan.ride && !s.pickupNeeded
+          ? "Updating both to 8 PM"
+          : "Dining · Updating to 8 PM",
+        s.plan.ride && !s.pickupNeeded,
       );
       wait("updating", 2000);
       break;
@@ -209,12 +352,15 @@ export function reducer(state: State, a: Action): State {
         "main",
         "Got it — keep 7:00 PM at another restaurant. I'll refresh the route after you choose.",
       );
+      s.updateNote = `Restaurant changed: ${s.exceptionRestaurant || s.restaurant.name} was full at 7:00 PM`;
       find(1);
       break;
     case "CUSTOMIZE":
       if (!["exception", "restaurants", "request"].includes(s.step))
         return state;
       Object.assign(s.plan, a.value);
+      if (s.exceptionRestaurant)
+        s.updateNote = `Changed to ${s.plan.cuisine} — ${s.exceptionRestaurant} was full at 7:00 PM`;
       s.exceptionResolved = true;
       msg(
         "alex",
@@ -256,65 +402,161 @@ export function reducer(state: State, a: Action): State {
       work("mobility", "Mobility · Calling car");
       wait("calling", 2500);
       break;
-    case "CANCEL_PROMPT":
-      if (s.cancelPrompt) return state;
-      if (s.step === "welcome") {
-        msg("main", "Nothing is planned or booked yet.");
+    case "CANCEL_PROMPT": {
+      if (
+        s.cancelPrompt ||
+        s.step === "cancelling" ||
+        s.step === "checkingCancel"
+      )
+        return state;
+      const target =
+        typeof a.value === "object" ? a.value.target : a.value || "pick";
+      const text = typeof a.value === "object" ? a.value.text : undefined;
+      if (text) msg("alex", text);
+      const table =
+        !s.tableOutcome &&
+        (s.booked || !["welcome", "complete"].includes(s.step));
+      const ride = !s.rideOutcome && s.plan.ride && s.step !== "welcome";
+      if (!table && !ride) {
+        msg("main", "Nothing is planned or booked that can be cancelled.");
         break;
       }
-      s.cancelPrompt = a.value;
+      s.cancelSelection = {
+        table: table && (target === "table" || target === "all"),
+        ride: ride && (target === "ride" || target === "all"),
+      };
+      s.cancelPrompt = target;
       s.resumeStep = s.step;
       s.resumeDining = s.tasks.dining;
-      s.cancelledCalledRide = s.rideBooked;
       s.resumePending = s.pending;
       s.pending = undefined;
       s.thinking = "";
-      msg(
-        "main",
-        a.value === "ride"
-          ? `I'll cancel only the ride. ${s.booked ? `Your table at ${s.restaurant.name} stays booked.` : "Dining can continue."} Cancel ride?`
-          : "I can stop the dinner and ride plan. Please review both tasks before confirming.",
-      );
-      card("cancel", {
-        cancel: a.value,
-        tableStatus: s.booked
-          ? a.value === "all"
-            ? "Booked → will cancel"
-            : "Stays booked"
-          : s.tasks.dining === "Not started"
-            ? "Not started"
-            : s.tasks.dining === "Working"
-              ? a.value === "all"
-                ? "In progress → will stop"
-                : "In progress — continues"
-              : a.value === "all"
-                ? "Not booked → stop planning"
-                : "Waiting for your confirmation",
-        rideStatus: s.rideBooked
-          ? "Booked → will cancel"
-          : "Not called — nothing to cancel",
-      });
+      const undo =
+        (s.cancelSelection.table && (s.booked || s.step === "bookingWork")) ||
+        (s.cancelSelection.ride && (s.rideBooked || s.step === "calling"));
+      if (
+        target !== "pick" &&
+        !s.cancelSelection.table &&
+        !s.cancelSelection.ride
+      ) {
+        s.cancelPrompt = undefined;
+        s.pending = s.resumePending;
+        msg("main", "That task is already stopped or cancelled.");
+      } else if (target !== "pick" && !undo) {
+        if (!text)
+          msg(
+            "alex",
+            target === "all"
+              ? "Stop dinner and ride planning"
+              : `Stop ${target === "table" ? "dinner" : "ride"} planning`,
+          );
+        s.thinking = "Checking what can be cancelled…";
+        wait("checkingCancel", 900);
+      } else s.cancelStage = "pick";
+      break;
+    }
+    case "CANCEL_TOGGLE":
+      if (s.cancelStage !== "pick") return state;
+      s.cancelSelection = {
+        ...s.cancelSelection!,
+        [a.value]: !s.cancelSelection?.[a.value as "table" | "ride"],
+      };
+      break;
+    case "CANCEL_CONTINUE": {
+      if (!s.cancelSelection?.table && !s.cancelSelection?.ride) return state;
+      const undo =
+        (s.cancelSelection.table &&
+          (s.booked || s.resumeStep === "bookingWork")) ||
+        (s.cancelSelection.ride &&
+          (s.rideBooked || s.resumeStep === "calling"));
+      if (undo) s.cancelStage = "confirm";
+      else {
+        s.cancelStage = undefined;
+        msg(
+          "alex",
+          s.cancelSelection.table && s.cancelSelection.ride
+            ? "Stop dinner and ride planning"
+            : s.cancelSelection.table
+              ? "Stop dinner planning"
+              : "Stop ride planning",
+        );
+        s.thinking = "Checking what can be cancelled…";
+        wait("checkingCancel", 900);
+      }
+      break;
+    }
+    case "CANCEL_BACK":
+      s.cancelStage = "pick";
       break;
     case "KEEP":
       s.cancelPrompt = undefined;
+      s.cancelStage = undefined;
+      s.cancelSelection = undefined;
       s.pending = s.resumePending
         ? { ...s.resumePending, id: s.seq++ }
         : undefined;
       s.resumePending = undefined;
       s.resumeStep = undefined;
-      msg("main", "Kept your plan as it is.");
       break;
-    case "CANCEL_CONFIRM":
-      if (!s.cancelPrompt) return state;
-      if (s.cancelPrompt === "all") s.version++;
-      msg("alex", s.cancelPrompt === "ride" ? "Cancel ride" : "Cancel both");
-      work(
-        "mobility",
-        s.cancelPrompt === "ride" ? "Cancelling ride" : "Cancelling both",
-        s.cancelPrompt === "all",
+    case "KEEP_RIDE":
+      s.askAboutRide = false;
+      msg("alex", "Keep the ride");
+      msg("main", `Your ride to ${s.restaurant.name} is kept.`);
+      break;
+    case "CANCEL_CONFIRM": {
+      if (!s.cancelPrompt || s.cancelStage !== "confirm") return state;
+      const { table, ride } = s.cancelSelection!;
+      s.cancelStage = undefined;
+      s.askAboutRide = false;
+      msg(
+        "alex",
+        table && ride
+          ? "Cancel table & ride"
+          : table
+            ? "Cancel table"
+            : "Cancel ride",
       );
-      wait("cancelling", 1800);
+      msg(
+        "event",
+        table && ride ? "Message to · Dining & Mobility" : "Message to",
+        table && ride ? undefined : table ? "dining" : "mobility",
+      );
+      work(
+        table ? "dining" : "mobility",
+        table && ride
+          ? "Cancelling table · ride"
+          : table
+            ? "Cancelling table"
+            : "Cancelling ride",
+        table && ride,
+      );
+      s.cancelWaitForBooking =
+        (table && s.resumeStep === "bookingWork") ||
+        (ride && s.resumeStep === "calling");
+      msg(
+        "main",
+        table && ride
+          ? "Cancelling your table and your ride now…"
+          : table
+            ? "Cancelling your table now…"
+            : "Cancelling your ride now…",
+      );
+      if (s.cancelWaitForBooking)
+        msg(
+          "main",
+          "That Pal is finishing the booking request. I'll wait for its answer, then cancel any booking that comes back.",
+        );
+      summary(
+        "Updating",
+        table ? "Cancelling…" : undefined,
+        ride ? "Cancelling…" : undefined,
+      );
+      wait(
+        "cancelling",
+        s.cancelWaitForBooking ? s.resumePending?.ms || 2500 : 1800,
+      );
       break;
+    }
     case "TRANSLATION_REPLY":
       msg("main", `Driver reply: “${a.value.source}”\n${a.value.translation}`);
       break;
@@ -359,7 +601,7 @@ export function reducer(state: State, a: Action): State {
           msg(
             "main",
             matches.length
-              ? `Here are ${matches.length} ${s.findingMore ? "more " : ""}${s.plan.cuisine === "Cantonese" ? "Cantonese " : ""}places with a table at ${s.plan.time}, all under ¥${s.plan.budget} per person.`
+              ? `${matches.length} places have a table at ${s.plan.time}, all under ¥${s.plan.budget}. ${s.batch === 0 ? "Longtang is the classic pick, Shikumen has the most atmosphere, Lane 18 is the best value." : s.batch === 1 ? "Plane Tree is the quietest, Shanghai Table is best for dumplings, Riverside has the best view." : "Pearl is the dim sum pick, Canton House offers roast meats, Harbour is the seafood choice."}`
               : `I don't have a matching ${s.plan.cuisine} place within ¥${s.plan.budget}. Please adjust your preferences.`,
           );
           s.findingMore = false;
@@ -367,15 +609,7 @@ export function reducer(state: State, a: Action): State {
           s.pending = { id: s.seq++, ms: 1400 };
           break;
         case "lining":
-          if (!s.plan.ride || s.permission) booking();
-          else {
-            s.step = "permission";
-            msg(
-              "main",
-              "Great choice. To plan your ride, Mobility Pal needs your hotel address.",
-            );
-            card("permission");
-          }
+          booking();
           break;
         case "bookingWork":
           if (
@@ -384,6 +618,7 @@ export function reducer(state: State, a: Action): State {
             s.plan.time === "7:00 PM"
           ) {
             s.step = "exception";
+            s.exceptionRestaurant = s.restaurant.name;
             s.version++;
             s.header = {
               branch: "attention",
@@ -414,13 +649,18 @@ export function reducer(state: State, a: Action): State {
           s.step = "updated";
           done(
             "dining",
-            s.plan.ride ? "Both Pals updated" : "Dining · Plan updated",
+            s.plan.ride && !s.pickupNeeded
+              ? "Both Pals updated"
+              : "Dining · Plan updated",
           );
-          s.tasks.mobility = s.plan.ride ? "Done" : "Not started";
+          s.tasks.mobility =
+            s.plan.ride && !s.pickupNeeded ? "Done" : "Not started";
           msg(
             "event",
-            s.plan.ride ? "Message from · Dining & Mobility" : "Message from",
-            s.plan.ride ? undefined : "dining",
+            s.plan.ride && !s.pickupNeeded
+              ? "Message from · Dining & Mobility"
+              : "Message from",
+            s.plan.ride && !s.pickupNeeded ? undefined : "dining",
           );
           msg(
             "main",
@@ -431,7 +671,14 @@ export function reducer(state: State, a: Action): State {
           break;
         case "booked":
           off();
-          if (s.plan.ride) {
+          if (s.plan.ride && s.pickupNeeded) {
+            s.step = "denied";
+            msg(
+              "main",
+              "Your table is booked. Type your hotel name for the ride, or skip the ride for now.",
+            );
+            card("denied");
+          } else if (s.plan.ride) {
             s.step = "rideType";
             s.tasks.mobility = "Waiting for you";
             s.header.role = "mobility";
@@ -445,8 +692,9 @@ export function reducer(state: State, a: Action): State {
             s.step = "complete";
             msg(
               "main",
-              `You're all set: table at ${s.plan.time}. No ride has been called.`,
+              "You're all set. Here's tonight's plan — I'll ping you if anything changes.",
             );
+            summary(s.tableOutcome ? "Updated" : "All confirmed");
           }
           break;
         case "findingCars":
@@ -475,72 +723,28 @@ export function reducer(state: State, a: Action): State {
           off();
           msg(
             "main",
-            `You're all set: table at ${s.plan.time}, driver here in 4 min. I'll ping you if anything changes.`,
+            "You're all set. Here's tonight's plan — I'll ping you if anything changes.",
           );
+          summary(s.tableOutcome ? "Updated" : "All confirmed");
           break;
+        case "checkingCancel":
         case "cancelling": {
-          const all = s.cancelPrompt === "all";
-          const resume = s.resumeStep;
-          const pending = s.resumePending;
-          s.rideBooked = false;
-          s.plan.ride = false;
-          s.tasks.mobility = "Cancelled";
-          if (all) {
-            s.booked = false;
-            s.tasks.dining =
-              s.resumeDining === "Not started" ? "Not started" : "Cancelled";
+          // A booking in flight resolves before its cancellation request is sent.
+          if (s.cancelWaitForBooking) {
+            const selected = s.cancelSelection!;
+            if (selected.table && s.resumeStep === "bookingWork")
+              s.booked = !(
+                s.flow === "exception" &&
+                !s.exceptionResolved &&
+                s.plan.time === "7:00 PM"
+              );
+            if (selected.ride && s.resumeStep === "calling")
+              s.rideBooked = true;
+            s.cancelWaitForBooking = false;
+            wait("cancelling", 1600);
+            break;
           }
-          if (!all)
-            s.messages = s.messages.map((m) =>
-              m.kind === "card" && m.version === s.version && m.plan
-                ? { ...m, plan: { ...m.plan, ride: false } }
-                : m,
-            );
-          s.cancelResult = all
-            ? "Dinner plan cancelled. Ride plan cancelled. No fee."
-            : `Ride cancelled · no fee. ${s.booked ? "Your table stays booked." : "Dining continues."}`;
-          msg("main", s.cancelResult);
-          card("cancelResult", {
-            result: s.cancelResult,
-            tableStatus: all
-              ? s.resumeDining === "Not started"
-                ? "Not started"
-                : "Cancelled · done"
-              : s.booked
-                ? "Still booked"
-                : s.resumeDining === "Working"
-                  ? "In progress — continues"
-                  : s.resumeDining === "Not started"
-                    ? "Not started"
-                    : "Waiting for your confirmation",
-            rideStatus: s.cancelledCalledRide
-              ? "Cancelled · done"
-              : "Not called — nothing to cancel",
-          });
-          s.cancelPrompt = undefined;
-          s.resumeStep = undefined;
-          s.resumePending = undefined;
-          done("mobility", "Ride cancelled · no fee");
-          s.tasks.mobility = "Cancelled";
-          s.step = "complete";
-          s.pending = { id: s.seq++, ms: 1400 };
-          if (!all && !s.booked && resume) {
-            s.tasks.dining = s.resumeDining || "Waiting for you";
-            s.step = resume;
-            s.pending = pending ? { ...pending, id: s.seq++ } : undefined;
-            off();
-            if (s.tasks.dining === "Working")
-              work("dining", "Dining · Continuing plan");
-
-            if (resume === "permission" || resume === "denied") booking();
-            if (resume === "exception") {
-              s.header = {
-                branch: "attention",
-                activity: "Dining · 7:00 PM full",
-                role: "dining",
-              };
-            }
-          }
+          finishCancellation();
           break;
         }
         default:

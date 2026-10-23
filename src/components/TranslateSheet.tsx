@@ -1,8 +1,57 @@
 import { useEffect, useRef, useState } from "react";
 import { motion } from "framer-motion";
-import { ArrowDownUp, ArrowLeftRight, Mic, Volume2, X } from "lucide-react";
+import { ArrowDownUp, ArrowLeftRight, X } from "lucide-react";
 import type { Action, Restaurant } from "../engine/script";
 import "./TranslateSheet.css";
+function Speaker({
+  size = 18,
+  waves = true,
+}: {
+  size?: number;
+  waves?: boolean;
+}) {
+  return (
+    <svg
+      width={size}
+      height={size}
+      viewBox="0 0 24 24"
+      fill="none"
+      aria-hidden="true"
+    >
+      <path
+        d="M3 8h4l5-4v16l-5-4H3a1 1 0 0 1-1-1V9a1 1 0 0 1 1-1Z"
+        fill="currentColor"
+      />
+      {waves && (
+        <path
+          d="M16 8a6 6 0 0 1 0 8m3-11a10 10 0 0 1 0 14"
+          stroke="currentColor"
+          strokeWidth="2"
+          strokeLinecap="round"
+        />
+      )}
+    </svg>
+  );
+}
+function Mic({ size = 18 }: { size?: number }) {
+  return (
+    <svg
+      width={size}
+      height={size}
+      viewBox="0 0 24 24"
+      fill="none"
+      aria-hidden="true"
+    >
+      <rect x="8" y="2" width="8" height="13" rx="4" fill="currentColor" />
+      <path
+        d="M5 10v2a7 7 0 0 0 14 0v-2M12 19v3m-4 0h8"
+        stroke="currentColor"
+        strokeWidth="2"
+        strokeLinecap="round"
+      />
+    </svg>
+  );
+}
 const replyZh = "好的，大堂门口见，大概四分钟到。";
 const replyEn = "OK, see you at the lobby entrance. About 4 minutes.";
 /** Figma 199:9863 / 199:9897. Browser speech output; scripted demo driver input. */
@@ -188,7 +237,7 @@ export function TranslateSheet({
                 aria-label={`Play source in ${reverse ? "Chinese" : "English"}`}
                 onClick={() => speak(source, reverse ? "zh-CN" : "en-US")}
               >
-                <Volume2 size={15} />
+                <Speaker size={15} waves={false} />
               </button>
             </div>
             <p lang={reverse ? "zh-CN" : "en"}>{source}</p>
@@ -231,7 +280,7 @@ export function TranslateSheet({
                 className="button primary"
                 onClick={() => (speaking ? stop() : speak(target, "zh-CN"))}
               >
-                <Volume2 size={18} />
+                <Speaker size={18} />
                 {speaking ? "Stop playback" : "Play in Chinese"}
               </button>
             )}

@@ -429,7 +429,7 @@ small {
 }
 .reaction {
   position: absolute;
-  right: 0;
+  right: 16px;
   bottom: 0;
   width: 32px;
   height: 32px;
@@ -1692,5 +1692,283 @@ mark {
 @media (min-width: 761px) and (max-width: 950px) {
   .desktop-intro[lang="zh-CN"] h1 {
     font-size: 34px;
+  }
+}
+/* Round 2: explanations, task summaries and explicit cancellation scope. */
+.text-action {
+  background: transparent;
+  color: var(--muted, #6e746f);
+  padding: 8px;
+  font-size: 15px;
+}
+.answered-card {
+  opacity: 0.55 !important;
+}
+.restaurant-card {
+  position: relative;
+}
+.recommend-badge {
+  position: absolute;
+  top: 34px;
+  left: 34px;
+  padding: 5px 10px;
+  border: 1px solid #ffffff80;
+  background: #ffffffe0;
+  backdrop-filter: blur(12px);
+  border-radius: 20px;
+  font-size: 12px;
+  font-weight: 600;
+}
+.recommend-why {
+  background: #edf8f0;
+  padding: 10px 12px;
+  border-radius: 12px;
+  margin: 8px 0;
+}
+.recommend-why > div {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+}
+.recommend-why p {
+  margin: 6px 0 0;
+  font-size: 13px;
+  line-height: 18px;
+  color: #526159;
+}
+.tonight-plan {
+  border-radius: 16px;
+  gap: 14px;
+  padding: 16px;
+}
+.tonight-plan h3 {
+  font-size: 17px;
+  line-height: 22px;
+}
+.plan-tag {
+  font-size: 12px;
+  line-height: 16px;
+  padding: 3px 8px;
+  background: #f2f2f2;
+  color: #707570;
+  border-radius: 8px;
+  white-space: nowrap;
+}
+.plan-tag.confirmed {
+  background: #e7f6ed;
+  color: #16894a;
+}
+.plan-task {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+}
+.plan-mini {
+  width: 36px;
+  height: 36px;
+  background: #f7f7f7;
+  display: grid;
+  place-items: center;
+  border-radius: 10px;
+  flex-shrink: 0;
+}
+.plan-task > div:last-child {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+.plan-task strong {
+  font-size: 15px;
+  line-height: 20px;
+  font-weight: 600;
+}
+.plan-task p {
+  font-size: 13px;
+  line-height: 18px;
+  color: #777;
+  margin: 0;
+}
+.plan-status {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 13px;
+  line-height: 18px;
+  color: #188647;
+}
+.plan-status.muted {
+  color: #929792;
+}
+.plan-divider {
+  height: 1px;
+  background: #e5e5e5;
+}
+.plan-note {
+  background: #f6f6f6;
+  padding: 8px 12px;
+  border-radius: 10px;
+  font-size: 13px;
+  line-height: 18px;
+  color: #777;
+  margin: 0;
+}
+.plan-cancel {
+  background: #f6f6f6;
+  color: #e14444;
+  border-radius: 12px;
+  padding: 10px;
+  font-size: 15px;
+  line-height: 20px;
+}
+.plan-cancel:disabled {
+  opacity: 1;
+  cursor: default;
+}
+.cancel-overlay {
+  z-index: 100;
+}
+.cancel-sheet {
+  position: relative;
+  width: 100%;
+  background: white;
+  border-radius: 28px 28px 0 0;
+  padding: 8px 20px 34px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  max-height: 94%;
+  overflow-y: auto;
+}
+.cancel-sheet .grabber {
+  width: 36px;
+  height: 5px;
+  background: #d2d2d2;
+  border-radius: 5px;
+  margin: 0 auto;
+  flex-shrink: 0;
+}
+.cancel-sheet h3,
+.cancel-alert h3 {
+  font-size: 17px;
+  line-height: 22px;
+  margin: 0;
+}
+.cancel-sheet p {
+  font-size: 13px;
+  line-height: 18px;
+  color: #777;
+  margin: 4px 0 0;
+}
+.cancel-choices {
+  background: #f6f6f6;
+  border-radius: 14px;
+  overflow: hidden;
+}
+.cancel-choices > button {
+  width: 100%;
+  padding: 12px 14px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  text-align: left;
+  background: transparent;
+}
+.cancel-choices > button + button {
+  border-top: 1px solid #e5e5e5;
+}
+.cancel-choices button > span:not(.pal) {
+  flex: 1;
+  min-width: 0;
+}
+.cancel-choices strong {
+  font-size: 15px;
+  line-height: 20px;
+  display: block;
+  font-weight: 600;
+}
+.cancel-choices small {
+  font-size: 13px;
+  line-height: 18px;
+  display: block;
+  color: #777;
+  margin-top: 2px;
+}
+.cancel-check {
+  width: 24px;
+  height: 24px;
+  border: 1.5px solid #b8b8b8;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  flex-shrink: 0;
+}
+.cancel-check.checked {
+  color: white;
+  background: #08c463;
+  border-color: #08c463;
+}
+.cancel-buttons {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.cancel-buttons .button {
+  height: 48px;
+  border-radius: 24px;
+}
+.cancel-buttons .button:disabled {
+  opacity: 0.35;
+}
+.confirm-overlay {
+  align-items: center;
+  justify-content: center;
+}
+.cancel-alert {
+  position: relative;
+  width: 290px;
+  border-radius: 20px;
+  background: white;
+  overflow: hidden;
+  text-align: center;
+}
+.cancel-alert-copy {
+  padding: 20px 20px 18px;
+}
+.cancel-alert p {
+  font-size: 13px;
+  line-height: 18px;
+  color: #777;
+  margin: 6px 0 0;
+}
+.cancel-alert button {
+  width: 100%;
+  min-height: 50px;
+  padding: 13px;
+  border-top: 1px solid #e5e5e5;
+  background: white;
+  font-size: 17px;
+}
+.cancel-alert .destructive {
+  color: #e14444;
+  font-weight: 600;
+}
+.ride-followup {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.spin {
+  animation: plan-spin 1s linear infinite;
+}
+@keyframes plan-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .spin {
+    animation: none;
   }
 }

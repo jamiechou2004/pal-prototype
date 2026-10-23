@@ -6,12 +6,17 @@ async function skip(p: Page) {
     .first();
   if (await b.count()) await b.click();
 }
-async function start(p: Page, flow = "normal") {
+async function start(
+  p: Page,
+  flow = "normal",
+  permission = "Allow for tonight",
+) {
   await p.goto(`?flow=${flow}&debug=1`);
   await p.getByRole("textbox", { name: "Message Main Pal" }).click();
   await p.getByRole("button", { name: "Send message" }).click();
   await skip(p);
   await p.getByRole("button", { name: "Looks good", exact: true }).click();
+  await p.getByRole("button", { name: permission, exact: true }).click();
   await skip(p);
   await expect(p.locator(".restaurant-card").first()).toBeVisible();
 }
@@ -49,7 +54,6 @@ async function ride(p: Page) {
 async function exception(p: Page) {
   await start(p, "exception");
   await select(p);
-  await p.getByRole("button", { name: "Allow", exact: true }).click();
   await book(p);
   await expect(
     p.getByRole("heading", { name: "What should I do instead?" }),
@@ -60,7 +64,6 @@ test("normal, selectable car type, profile/search, cancel ride only", async ({
 }) => {
   await start(p);
   await select(p);
-  await p.getByRole("button", { name: "Allow", exact: true }).click();
   await book(p);
   await expect(p.getByText("Table booked", { exact: true })).toBeVisible();
   await ride(p);
@@ -73,9 +76,10 @@ test("normal, selectable car type, profile/search, cancel ride only", async ({
     .getByRole("textbox", { name: "Message Main Pal" })
     .fill("cancel the ride");
   await p.getByRole("button", { name: "Send message" }).click();
+  await p.getByRole("button", { name: /Continue · 1 selected/ }).click();
   await p.getByRole("button", { name: "Cancel ride", exact: true }).click();
   await skip(p);
-  await expect(p.getByText("Still booked", { exact: true })).toBeVisible();
+  await expect(p.getByText("✓ Table kept", { exact: true })).toBeVisible();
 });
 test("exception A via natural language, outdated estimate and explicit confirmation", async ({
   page: p,
@@ -92,6 +96,9 @@ test("exception A via natural language, outdated estimate and explicit confirmat
   await p.getByRole("button", { name: "Book table for 8:00 PM" }).click();
   await skip(p);
   await ride(p);
+  await expect(p.locator(".tonight-plan").last()).toContainText(
+    "Plan updated from 7:00 PM to 8:00 PM",
+  );
   await expect(
     p.getByText(/Pickup at your hotel lobby · arrive ~7:57 PM/),
   ).toBeVisible();
@@ -115,6 +122,9 @@ test("exception B finds alternate restaurant with updated prices", async ({
     p.getByRole("button", { name: "Confirm Economy · ¥24–30" }),
   ).toBeVisible();
   await ride(p);
+  await expect(p.locator(".tonight-plan").last()).toContainText(
+    "Restaurant changed: Longtang Bistro was full at 7:00 PM",
+  );
 });
 test("exception custom Cantonese and cancel everything", async ({
   page: p,
@@ -139,29 +149,37 @@ test("exception custom Cantonese and cancel everything", async ({
     p.getByRole("button", { name: "Confirm Economy · ¥20–26" }),
   ).toBeVisible();
   await ride(p);
+  await expect(p.locator(".tonight-plan").last()).toContainText(
+    "Changed to Cantonese — Longtang Bistro was full at 7:00 PM",
+  );
   await p
     .getByRole("textbox", { name: "Message Main Pal" })
     .fill("cancel everything");
   await p.getByRole("button", { name: "Send message" }).click();
+  await p.getByRole("button", { name: /Continue · 2 selected/ }).click();
   await p.getByRole("button", { name: "Cancel both", exact: true }).click();
   await skip(p);
-  await expect(p.getByText("Cancelled · done", { exact: true })).toHaveCount(2);
+  await expect(p.locator(".tonight-plan").last()).toContainText(
+    "✓ Cancelled by Dining Pal",
+  );
+  await expect(p.locator(".tonight-plan").last()).toContainText(
+    "✓ Cancelled by Mobility Pal",
+  );
 });
 test("permission refusal supports skip ride, and live status sheet", async ({
   page: p,
 }) => {
-  await start(p);
+  await start(p, "normal", "Don't allow");
   await p.getByRole("button", { name: "Who's working on tonight" }).click();
   await expect(p.getByRole("dialog")).toContainText("Dining Pal");
   await p
     .getByRole("button", { name: "Dismiss sheet" })
     .click({ force: true, position: { x: 10, y: 100 } });
   await select(p);
-  await p.getByRole("button", { name: "Don't allow", exact: true }).click();
-  await p.getByRole("button", { name: "Skip ride", exact: true }).click();
+  await p.getByRole("button", { name: "Skip the ride", exact: true }).click();
   await book(p);
   await skip(p);
-  await expect(p.getByText(/No ride has been called/)).toBeVisible();
+  await expect(p.locator(".tonight-plan").last()).toBeVisible();
   await expect(p.getByRole("radiogroup")).toHaveCount(0);
 });
 test("manual address, request editing, carousel dots, pause and no asset failures", async ({
@@ -171,7 +189,7 @@ test("manual address, request editing, carousel dots, pause and no asset failure
   p.on("response", (r) => {
     if (r.status() >= 400) bad.push(r.url());
   });
-  await start(p);
+  await start(p, "normal", "Don't allow");
   await p.getByRole("button", { name: "Restaurant 2", exact: true }).click();
   await expect(
     p.getByRole("button", { name: "Restaurant 2", exact: true }),
@@ -185,8 +203,7 @@ test("manual address, request editing, carousel dots, pause and no asset failure
     .first()
     .click();
   await skip(p);
-  await p.getByRole("button", { name: "Don't allow", exact: true }).click();
-  await p.getByRole("button", { name: "Enter address", exact: true }).click();
+  await p.getByRole("button", { name: "Type hotel name", exact: true }).click();
   await p
     .getByRole("textbox", { name: "Enter pickup address" })
     .fill("Park Hotel, 170 Nanjing Road West");
@@ -230,29 +247,12 @@ test("edit time before approval, pause, and stale controls", async ({
     .getByRole("button", { name: "Looks good", exact: true })
     .last()
     .click();
+  await p.getByRole("button", { name: "Allow once", exact: true }).click();
   await skip(p);
   await select(p);
-  await p.getByRole("button", { name: "Allow", exact: true }).click();
   await book(p);
   await skip(p);
   await expect(p.getByText(/leave 7:35 PM/)).toBeVisible();
-});
-test("cancel in-progress tasks needs confirmation, keep resumes", async ({
-  page: p,
-}) => {
-  await p.goto("?flow=normal&debug=1");
-  await p.getByRole("textbox", { name: "Message Main Pal" }).click();
-  await p.getByRole("button", { name: "Send message" }).click();
-  await skip(p);
-  await p.getByRole("button", { name: "Looks good", exact: true }).click();
-  await p
-    .getByRole("textbox", { name: "Message Main Pal" })
-    .fill("cancel everything");
-  await p.getByRole("button", { name: "Send message" }).click();
-  await expect(p.getByRole("button", { name: "Cancel both" })).toBeVisible();
-  await p.getByRole("button", { name: "Keep it" }).click();
-  await skip(p);
-  await expect(p.locator(".restaurant-card").first()).toBeVisible();
 });
 test("reduced motion and typed custom request", async ({ page: p }) => {
   await p.emulateMedia({ reducedMotion: "reduce" });

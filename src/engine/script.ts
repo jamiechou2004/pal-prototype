@@ -1,7 +1,12 @@
 export type Role = "main" | "dining" | "mobility";
 export type Branch = "off" | "working" | "done" | "attention";
 export type TaskStatus =
-  "Not started" | "Working" | "Waiting for you" | "Done" | "Cancelled";
+  | "Not started"
+  | "Working"
+  | "Waiting for you"
+  | "Done"
+  | "Cancelled"
+  | "Stopped";
 export type Step =
   | "welcome"
   | "reading"
@@ -23,6 +28,7 @@ export type Step =
   | "calling"
   | "rideBooked"
   | "complete"
+  | "checkingCancel"
   | "cancelling";
 export type Plan = {
   time: string;
@@ -217,8 +223,7 @@ export type CardKind =
   | "rideSuccess"
   | "change"
   | "updated"
-  | "cancel"
-  | "cancelResult";
+  | "tonight";
 export type Message = {
   id: number;
   kind: "main" | "alex" | "event" | "card";
@@ -229,7 +234,8 @@ export type Message = {
   restaurant?: Restaurant;
   batch?: number;
   version?: number;
-  cancel?: "ride" | "all";
+  planTag?: string;
+  updateNote?: string;
   carType?: number;
   carIndex?: number;
   result?: string;
@@ -262,13 +268,21 @@ export type State = {
   carType: number;
   carIndex: number;
   thinking: string;
-  cancelPrompt?: "ride" | "all";
+  cancelPrompt?: "ride" | "all" | "table" | "pick";
+  cancelStage?: "pick" | "confirm";
+  cancelSelection?: { table: boolean; ride: boolean };
+  tableOutcome?: "cancelled" | "stopped";
+  rideOutcome?: "cancelled" | "stopped";
+  pickupNeeded?: boolean;
+  permissionScope?: "once" | "tonight";
+  updateNote?: string;
+  exceptionRestaurant?: string;
+  askAboutRide?: boolean;
+  cancelWaitForBooking?: boolean;
   resumeStep?: Step;
   resumeDining?: TaskStatus;
-  cancelledCalledRide?: boolean;
   findingMore?: boolean;
   resumePending?: { id: number; ms: number };
-  cancelResult?: string;
   paused: boolean;
 };
 export type Action = { type: string; value?: any };

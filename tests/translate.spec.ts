@@ -12,10 +12,12 @@ async function toTranslation(p: Page) {
   await p.getByRole("button", { name: "Send message" }).click();
   await skip(p);
   await p.getByRole("button", { name: "Looks good", exact: true }).click();
+  await p
+    .getByRole("button", { name: "Allow for tonight", exact: true })
+    .click();
   await skip(p);
   await p.getByRole("button", { name: "Choose", exact: true }).first().click();
   await skip(p);
-  await p.getByRole("button", { name: "Allow", exact: true }).click();
   await p.getByRole("button", { name: "Share & book table" }).click();
   await skip(p);
   await skip(p);
