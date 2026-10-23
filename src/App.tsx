@@ -25,6 +25,55 @@ export default function App() {
     window.addEventListener("resize", resize);
     return () => window.removeEventListener("resize", resize);
   }, []);
+  const [introLanguage, setIntroLanguage] = useState<"en" | "zh">(() => {
+    try {
+      return localStorage.getItem("pal-intro-language") === "zh" ? "zh" : "en";
+    } catch {
+      return "en";
+    }
+  });
+  useEffect(() => {
+    try {
+      localStorage.setItem("pal-intro-language", introLanguage);
+    } catch {}
+  }, [introLanguage]);
+  const intro =
+    introLanguage === "zh"
+      ? {
+          eyebrow: "一点帮助，让今晚更美好。",
+          title: ["你的安排，", "放心交给 Pal。"],
+          copy: [
+            "一句话，让合适的 Pal 来帮忙。",
+            "从晚餐到出行，为你妥善安排。",
+          ],
+          prototype: "交互原型",
+          normal: "正常流程",
+          exception: "异常流程 · 晚上 7 点满座",
+          restart: "重新开始",
+          pause: "暂停",
+          resume: "继续",
+          skip: "跳过等待 →",
+          note: ["设计原型，不会产生真实预订或费用。", "为腾讯设计挑战制作。"],
+        }
+      : {
+          eyebrow: "A LITTLE HELP. A BETTER EVENING.",
+          title: ["Your plans.", "In good hands."],
+          copy: [
+            "One conversation, the right Pals.",
+            "Dinner and a ride, thoughtfully coordinated.",
+          ],
+          prototype: "INTERACTIVE PROTOTYPE",
+          normal: "Normal flow",
+          exception: "Exception · 7:00 PM full",
+          restart: "Restart",
+          pause: "Pause",
+          resume: "Resume",
+          skip: "Skip waiting →",
+          note: [
+            "Design prototype · no real bookings or charges.",
+            "Built for the Tencent design challenge.",
+          ],
+        };
   const initialFlow =
     new URLSearchParams(location.search).get("flow") === "exception"
       ? "exception"
@@ -115,27 +164,52 @@ export default function App() {
   return (
     <MotionConfig reducedMotion="user">
       <main className="workspace">
-        <aside className="desktop-intro">
-          <a
-            className="wordmark"
-            href="#"
-            onClick={(e) => {
-              e.preventDefault();
-              setStarted(false);
-            }}
-          >
-            pal<span>●</span>
-          </a>
-          <p className="eyebrow">A LITTLE HELP. A BETTER EVENING.</p>
+        <aside
+          className="desktop-intro"
+          lang={introLanguage === "zh" ? "zh-CN" : "en"}
+        >
+          <div className="intro-heading">
+            <a
+              className="wordmark"
+              href="#"
+              onClick={(e) => {
+                e.preventDefault();
+                setStarted(false);
+              }}
+            >
+              pal<span>●</span>
+            </a>
+            <div
+              className="intro-language"
+              role="group"
+              aria-label="Introduction language / 介绍语言"
+            >
+              <button
+                lang="en"
+                aria-pressed={introLanguage === "en"}
+                onClick={() => setIntroLanguage("en")}
+              >
+                EN
+              </button>
+              <button
+                lang="zh-CN"
+                aria-pressed={introLanguage === "zh"}
+                onClick={() => setIntroLanguage("zh")}
+              >
+                中文
+              </button>
+            </div>
+          </div>
+          <p className="eyebrow">{intro.eyebrow}</p>
           <h1>
-            Your plans.
+            {intro.title[0]}
             <br />
-            In good hands.
+            {intro.title[1]}
           </h1>
           <p className="intro-copy">
-            One conversation, the right Pals.
+            {intro.copy[0]}
             <br />
-            Dinner and a ride, thoughtfully coordinated.
+            {intro.copy[1]}
           </p>
           <div className="intro-pals">
             <Pal size={64} />
@@ -143,30 +217,30 @@ export default function App() {
             <Pal role="mobility" size={48} />
           </div>
           <div className="demo-controls">
-            <span className="eyebrow">INTERACTIVE PROTOTYPE</span>
+            <span className="eyebrow">{intro.prototype}</span>
             <button
               className={s.flow === "normal" && started ? "chosen" : ""}
               onClick={() => begin("normal")}
             >
-              Normal flow <ArrowRight size={16} />
+              {intro.normal} <ArrowRight size={16} />
             </button>
             <button
               className={s.flow === "exception" && started ? "chosen" : ""}
               onClick={() => begin("exception")}
             >
-              Exception · 7:00 PM full <ArrowRight size={16} />
+              {intro.exception} <ArrowRight size={16} />
             </button>
             <div className="control-row">
               <button onClick={() => begin(s.flow)}>
                 <RotateCcw size={14} />
-                Restart
+                {intro.restart}
               </button>
               <button
                 disabled={!started}
                 onClick={() => dispatch({ type: "PAUSE" })}
               >
                 {s.paused ? <Play size={14} /> : <Pause size={14} />}{" "}
-                {s.paused ? "Resume" : "Pause"}
+                {s.paused ? intro.resume : intro.pause}
               </button>
             </div>
             {s.pending && (
@@ -174,14 +248,14 @@ export default function App() {
                 className="skip"
                 onClick={() => dispatch({ type: "TICK" })}
               >
-                Skip waiting →
+                {intro.skip}
               </button>
             )}
           </div>
           <p className="demo-note">
-            Design prototype · no real bookings or charges.
+            {intro.note[0]}
             <br />
-            Built for the Tencent design challenge.
+            {intro.note[1]}
           </p>
         </aside>
         <div

@@ -1650,3 +1650,47 @@ mark {
   width: 19.5598px;
   left: 0.4402px;
 }
+
+.intro-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 24px;
+}
+.intro-language {
+  display: flex;
+  gap: 3px;
+  padding: 3px;
+  border: 1px solid #d7ded4;
+  border-radius: 20px;
+  flex: none;
+}
+.intro-language button {
+  min-width: 42px;
+  padding: 5px 10px;
+  border-radius: 16px;
+  font-size: 12px;
+  line-height: 18px;
+  color: #667367;
+}
+.intro-language button[aria-pressed="true"] {
+  color: #17271f;
+  background: #fff;
+  box-shadow: 0 1px 4px #0000000a;
+}
+.desktop-intro[lang="zh-CN"] {
+  letter-spacing: 0;
+}
+.desktop-intro[lang="zh-CN"] h1 {
+  font-size: 42px;
+  line-height: 1.2;
+  letter-spacing: 0;
+}
+.desktop-intro[lang="zh-CN"] .eyebrow {
+  letter-spacing: 1px;
+}
+@media (min-width: 761px) and (max-width: 950px) {
+  .desktop-intro[lang="zh-CN"] h1 {
+    font-size: 34px;
+  }
+}
