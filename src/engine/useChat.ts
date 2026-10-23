@@ -286,6 +286,12 @@ export function reducer(state: State, a: Action): State {
       );
       wait("cancelling", 1800);
       break;
+    case "TRANSLATION_REPLY":
+      msg(
+        "main",
+        `Driver reply (demo): “${a.value.source}”\n${a.value.translation}`,
+      );
+      break;
     case "TEXT":
       msg("alex", a.value);
       msg(

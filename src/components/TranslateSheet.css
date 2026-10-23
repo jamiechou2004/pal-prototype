@@ -1,0 +1,238 @@
+.translate-sheet {
+  position: relative;
+  width: 100%;
+  max-height: 94%;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 8px 20px max(34px, env(safe-area-inset-bottom));
+  background: var(--bg-primary);
+  border-radius: 32px 32px 0 0;
+  overflow: hidden;
+}
+.translate-grabber {
+  display: flex;
+  justify-content: center;
+  flex: none;
+  height: 5px;
+}
+.translate-grabber span {
+  width: 36px;
+  height: 5px;
+  border-radius: 3px;
+  background: var(--border-default);
+}
+.translate-header {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  flex: none;
+  min-height: 40px;
+}
+.translate-header h3 {
+  flex: 1;
+  text-align: center;
+  min-width: 0;
+}
+.translate-close {
+  width: 40px;
+  height: 40px;
+  flex: none;
+  border-radius: 20px;
+  background: var(--bg-secondary);
+  display: grid;
+  place-items: center;
+}
+.language-switch {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  border-radius: 18px;
+  background: var(--bg-secondary);
+  padding: 8px 12px;
+  font-size: 13px;
+  line-height: 18px;
+  letter-spacing: -0.08px;
+  white-space: nowrap;
+}
+.language-switch svg {
+  color: var(--text-secondary);
+}
+.translate-body {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  min-height: 0;
+}
+.translation-source {
+  padding: 14px 16px;
+  background: var(--bg-secondary);
+  border-radius: 16px;
+  color: var(--text-secondary);
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  flex: none;
+}
+.translation-label {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 13px;
+  line-height: 18px;
+  letter-spacing: -0.08px;
+}
+.translation-label b {
+  font-weight: 600;
+}
+.translation-label button {
+  display: grid;
+  place-items: center;
+  padding: 0;
+  width: 20px;
+  height: 18px;
+  color: inherit;
+}
+.translation-source p {
+  font-size: 15px;
+  line-height: 20px;
+  letter-spacing: -0.23px;
+}
+.translation-swap {
+  display: flex;
+  justify-content: center;
+  height: 40px;
+  flex: none;
+}
+.translation-swap button {
+  display: grid;
+  place-items: center;
+  border: 1px solid var(--border-default);
+  background: var(--bg-primary);
+  border-radius: 20px;
+  width: 40px;
+  height: 40px;
+}
+.translation-target {
+  border: 1.5px solid var(--accent);
+  border-radius: 16px;
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  background: var(--accent-subtle);
+  flex: none;
+}
+.translation-target .translation-label {
+  color: var(--accent);
+}
+.translated-text {
+  font-size: 26px;
+  line-height: 36px;
+  font-weight: 600;
+  letter-spacing: 0;
+  overflow-wrap: anywhere;
+}
+.reverse .translated-text {
+  font-size: 22px;
+  line-height: 28px;
+  letter-spacing: -0.26px;
+}
+.translation-destination {
+  padding-top: 6px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.translation-destination strong {
+  font-size: 17px;
+  line-height: 22px;
+  font-weight: 600;
+  letter-spacing: 0;
+}
+.translation-destination small {
+  font-size: 13px;
+  line-height: 18px;
+  letter-spacing: -0.08px;
+}
+.translation-actions {
+  display: flex;
+  gap: 12px;
+  flex: none;
+}
+.translation-actions .button:first-child {
+  flex: 1;
+  min-width: 0;
+}
+.translation-actions .button:last-child {
+  flex: none;
+  padding: 0 18px;
+}
+.translation-actions .secondary {
+  background: var(--bg-secondary);
+}
+.translation-footer,
+.translation-notice {
+  font-size: 13px;
+  line-height: 18px;
+  letter-spacing: -0.08px;
+  color: var(--text-tertiary);
+}
+.translation-notice {
+  color: var(--text-secondary);
+  background: var(--bg-secondary);
+  border-radius: 8px;
+  padding: 8px 12px;
+}
+.translate-sheet.fullscreen {
+  height: 100%;
+  max-height: 100%;
+  border-radius: 0;
+  padding-top: max(20px, env(safe-area-inset-top));
+}
+.fullscreen .translate-grabber,
+.fullscreen .translation-source,
+.fullscreen .translation-swap {
+  display: none;
+}
+.fullscreen .translate-body {
+  flex: 1;
+}
+.fullscreen .translation-target {
+  flex: 1;
+  justify-content: center;
+}
+.fullscreen .translated-text {
+  font-size: 34px;
+  line-height: 1.5;
+}
+.fullscreen.reverse .translated-text {
+  font-size: 30px;
+  line-height: 1.4;
+}
+.fullscreen .translation-actions .button {
+  font-size: 15px;
+  padding: 0 12px;
+}
+@media (max-width: 370px) {
+  .translate-sheet {
+    padding-left: 16px;
+    padding-right: 16px;
+  }
+  .translate-header h3 {
+    font-size: 15px;
+  }
+  .translation-actions .button {
+    font-size: 15px;
+    padding: 0 12px;
+  }
+  .language-switch {
+    padding: 8px;
+  }
+  .translated-text {
+    font-size: 24px;
+    line-height: 34px;
+  }
+}

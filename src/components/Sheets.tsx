@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { motion } from "framer-motion";
 import { Check, Minus, Plus, X } from "lucide-react";
+import { TranslateSheet } from "./TranslateSheet";
 import { Pal, asset } from "./Pal";
 import { Button, Row, RouteMap, type Sheet } from "./Cards";
 import {
@@ -92,6 +93,8 @@ export function Sheets({
   const changed = JSON.stringify(draft) !== JSON.stringify(s.plan);
   const r = sheet.value?.r || sheet.value || s.restaurant,
     p = sheet.value?.p || s.plan;
+  if (sheet.type === "translate")
+    return <TranslateSheet restaurant={r} close={close} dispatch={dispatch} />;
   return (
     <motion.div
       className="overlay"
@@ -409,17 +412,6 @@ export function Sheets({
               </Row>
               <p className="footnote">
                 Demo driver details. No real car has been called.
-              </p>
-            </>
-          )}
-          {sheet.type === "translate" && (
-            <>
-              <h2 lang="zh">您好，请送我到{r.cn}。谢谢！</h2>
-              <p>Hello, please take me to {r.name}. Thank you!</p>
-              <Row label="Address">{r.address}</Row>
-              <p lang="zh">我不会说中文。请在酒店大堂接我。</p>
-              <p>
-                Please pick me up at the hotel lobby. I don't speak Chinese.
               </p>
             </>
           )}

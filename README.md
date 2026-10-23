@@ -26,6 +26,7 @@ Desktop renders a 402 × 874 device. Mobile uses the viewport and safe-area inse
 - Natural-language exception choices; cuisine has precedence over numbers. All bookings and ride calls still need an explicit confirmation.
 - Address refusal → manual pickup or dinner only; cancellation confirmation for ride-only and the whole plan.
 - Working/done/attention pill, parallel work rings, live task sheet, profile and search, reactive carousel dots, edit sheet and reduced motion.
+- Updated bilingual Translate Sheet: English/Chinese direction switching, destination-aware copy, browser speech playback, full-screen display, and a clearly labeled sample driver reply retained in chat. Matches Figma nodes `199:9863` and `199:9897`.
 - Real Figma-exported restaurant, car, map, avatar, and Pal artwork served locally.
 
 ## Latest Pal decision overrides older spec animation
@@ -35,6 +36,8 @@ Main is green, Dining orange, Mobility blue. During task transfer the sender is 
 The newer Figma role colors (#FFAA7C / #2898FF) are retained in the actual character exports. Green action tokens follow the supplied spec.
 
 ## Prototype boundaries
+
+Translation text and driver replies are scripted demo content, not live translation. Chinese playback uses available browser voices.
 
 No backend, payment, location tracking, real restaurant bookings or car dispatch. Confirmation numbers, contact details, restaurant addresses, drivers, quotes and routes are illustrative. Restaurant and route state is deterministic. The map is a Figma image with exported route/pin layers, not live navigation. The cancellation fee is a simulated no-fee outcome.
 
