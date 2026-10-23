@@ -154,13 +154,19 @@ test("NL No opens quick options and keyboard; custom form No retains chips and w
     "Pearl Dim Sum",
   );
 });
-test("booking card cancellation stays full-colour when dimmed and preserves scope", async ({
+test("only the latest summary exposes cancellation and preserves scope", async ({
   page: p,
 }) => {
   await p.emulateMedia({ reducedMotion: "reduce" });
   await p.goto("?flow=cancel-all&debug=1");
   const old = p.locator('[data-message="booking"]');
-  const cancel = old.getByRole("button", { name: "Cancel", exact: true });
+  await expect(
+    old.getByRole("button", { name: "Cancel", exact: true }),
+  ).toHaveCount(0);
+  const cancel = p
+    .locator(".tonight-plan")
+    .last()
+    .getByRole("button", { name: "Cancel…", exact: true });
   await cancel.scrollIntoViewIfNeeded();
   const opacity = await cancel.evaluate((el) => {
     let n: Element | null = el,
@@ -173,6 +179,7 @@ test("booking card cancellation stays full-colour when dimmed and preserves scop
   });
   expect(opacity).toBe(1);
   await cancel.click();
+  await p.getByRole("checkbox", { name: /Table ·/ }).click();
   await expect(p.getByRole("checkbox", { name: /Table ·/ })).toBeChecked();
   await expect(p.getByRole("checkbox", { name: /Ride ·/ })).not.toBeChecked();
   await p.getByRole("button", { name: "Continue · 1 selected" }).click();
@@ -242,12 +249,10 @@ test("restaurant geometry, SVG tags and dark green actions on narrow screens", a
     () => document.documentElement.scrollWidth > innerWidth,
   );
   expect(overflow).toBe(false);
-  const lineHeight = await card
-    .locator(".recommend-why p")
-    .evaluate((el) => ({
-      height: el.getBoundingClientRect().height,
-      line: Number.parseFloat(getComputedStyle(el).lineHeight),
-    }));
+  const lineHeight = await card.locator(".recommend-why p").evaluate((el) => ({
+    height: el.getBoundingClientRect().height,
+    line: Number.parseFloat(getComputedStyle(el).lineHeight),
+  }));
   expect(lineHeight.height).toBeLessThanOrEqual(lineHeight.line * 2 + 0.5);
 });
 test("request-time later confirmation still asks permission before dispatch", () => {

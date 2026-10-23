@@ -1,3 +1,4 @@
+import { canStopPlanning } from "./bookingControls";
 import { inferDecision, customDecision, type Decision } from "./decisions";
 import { useEffect, useReducer } from "react";
 import {
@@ -40,6 +41,14 @@ export function reducer(state: State, a: Action): State {
       carIndex: s.carIndex,
       ...extra,
     });
+  const commit = (kinds: string[]) => {
+    const id = s.messages
+      .filter((m) => kinds.includes(m.card || ""))
+      .at(-1)?.id;
+    s.messages = s.messages.map((m) =>
+      m.id === id ? { ...m, committed: true } : m,
+    );
+  };
   const off = () => {
     s.header = { branch: "off", activity: "", role: "main" };
   };
@@ -385,6 +394,7 @@ export function reducer(state: State, a: Action): State {
     }
     case "BOOK":
       if (!["booking", "updated"].includes(s.step)) return state;
+      commit(["booking", "updated"]);
       msg(
         "alex",
         s.step === "updated"
@@ -479,6 +489,7 @@ export function reducer(state: State, a: Action): State {
       break;
     case "CONFIRM_TYPE":
       if (s.step !== "rideType") return state;
+      commit(["rideType"]);
       msg(
         "alex",
         `${["Economy", "Comfort", "Premium"][s.carType]} · ¥${route(s.restaurant, s.plan).ranges[s.carType]}`,
@@ -490,12 +501,26 @@ export function reducer(state: State, a: Action): State {
       break;
     case "CALL_CAR":
       if (s.step !== "cars") return state;
+      commit(["cars"]);
       s.carIndex = a.value;
       msg("alex", "Book this car");
       msg("event", "Messaged", "mobility");
       s.version++;
       work("mobility", "Mobility · Calling car");
       wait("calling", 2500);
+      break;
+    case "STOP_PLANNING": {
+      if (!canStopPlanning(s, a.value)) return state;
+      return reducer(s, {
+        type: "CANCEL_PROMPT",
+        value: {
+          target: a.value === "dining" ? "table" : "ride",
+          immediate: true,
+        },
+      });
+    }
+    case "HIDE_DONE":
+      if (s.header.branch === "done") off();
       break;
     case "CANCEL_PROMPT": {
       if (
@@ -573,6 +598,10 @@ export function reducer(state: State, a: Action): State {
               ? "Stop dinner and ride planning"
               : `Stop ${target === "table" ? "dinner" : "ride"} planning`,
           );
+        if (a.value?.immediate) {
+          finishCancellation();
+          break;
+        }
         s.thinking = "Checking what can be cancelled…";
         wait("checkingCancel", 900);
       } else s.cancelStage = "pick";
@@ -603,6 +632,10 @@ export function reducer(state: State, a: Action): State {
               ? "Stop dinner planning"
               : "Stop ride planning",
         );
+        if (a.value?.immediate) {
+          finishCancellation();
+          break;
+        }
         s.thinking = "Checking what can be cancelled…";
         wait("checkingCancel", 900);
       }
@@ -970,5 +1003,10 @@ export function useChat(demo: Demo) {
     const t = setTimeout(() => dispatch({ type: "TICK" }), state.pending.ms);
     return () => clearTimeout(t);
   }, [state.pending?.id, state.paused]);
+  useEffect(() => {
+    if (state.header.branch !== "done" || state.paused) return;
+    const timer = setTimeout(() => dispatch({ type: "HIDE_DONE" }), 1400);
+    return () => clearTimeout(timer);
+  }, [state.header.branch, state.header.activity, state.paused]);
   return { state, dispatch };
 }

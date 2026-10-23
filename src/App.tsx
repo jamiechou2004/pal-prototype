@@ -427,7 +427,8 @@ export default function App() {
                                 }
                                 className="reaction"
                                 initial={reduced ? false : { scale: 0.6 }}
-                                animate={{ scale: 1 }}
+                                animate={{ scale: reduced ? 1 : [0.6, 1.1, 1] }}
+                                transition={{ duration: 0.25 }}
                               >
                                 {activeReaction &&
                                 i ===

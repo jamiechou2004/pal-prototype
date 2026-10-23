@@ -2451,3 +2451,111 @@ a:focus-visible {
     scroll-behavior: auto !important;
   }
 }
+
+/* Round 2, final component and native feedback requirements. */
+.card:not(.restaurant-card) {
+  border-radius: 16px;
+}
+.detail-row .label {
+  width: 84px;
+} /* 84 + 12 gap = 96 px label column */
+.request-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.request-actions .primary {
+  order: -1;
+}
+.pal-row > div {
+  flex: 1;
+  min-width: 0;
+}
+.pal-stop {
+  color: #c92f2f;
+  background: transparent;
+  font-size: 15px;
+  font-weight: 600;
+  min-width: 44px;
+  min-height: 44px;
+}
+.who-working-ring {
+  position: absolute;
+  left: -3px;
+  top: -3px;
+  animation: spin 1.2s linear infinite;
+}
+.top-fade {
+  top: 100%;
+  height: 56px;
+  background: linear-gradient(#fff 0px, #fff 24px, #fff0 56px);
+}
+.nav {
+  background: #fff;
+}
+.cancel-alert {
+  animation: alert-in 200ms ease-out both;
+}
+.cancel-alert button {
+  min-height: 44px;
+  padding: 11px;
+  font-size: 15px;
+  line-height: 22px;
+}
+.confirm-overlay .scrim {
+  background: rgb(0 0 0 / 25%);
+}
+@keyframes alert-in {
+  from {
+    opacity: 0;
+    scale: 1.05;
+  }
+  to {
+    opacity: 1;
+    scale: 1;
+  }
+}
+.answered-card > *,
+.answered-card .card > *,
+.answered-card .booking-title > :not(.booking-cancel) {
+  transition: opacity 200ms ease;
+}
+@media (prefers-reduced-motion: reduce) {
+  .cancel-alert {
+    animation: alert-fade 150ms ease-out both !important;
+  }
+  @keyframes alert-fade {
+    from {
+      opacity: 0;
+    }
+    to {
+      opacity: 1;
+    }
+  }
+}
+
+.plan-cancel {
+  background: none;
+  border-radius: 0;
+  align-self: flex-end;
+  min-width: 44px;
+  min-height: 44px;
+  font-weight: 600;
+  color: #c92f2f;
+}
+.cancel-sheet {
+  animation: native-sheet-in 300ms ease-out both;
+}
+@keyframes native-sheet-in {
+  from {
+    translate: 0 100%;
+  }
+  to {
+    translate: 0 0;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .cancel-sheet {
+    animation: alert-fade 150ms ease-out both !important;
+  }
+}

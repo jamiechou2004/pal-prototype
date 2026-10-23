@@ -65,7 +65,7 @@ test("normal, selectable car type, profile/search, cancel ride only", async ({
   await start(p);
   await select(p);
   await book(p);
-  await expect(p.getByText("Table booked", { exact: true })).toBeVisible();
+  await expect(p.getByText("Booking confirmed", { exact: true })).toBeVisible();
   await ride(p);
   await p.getByRole("button", { name: "More", exact: true }).click();
   await p.getByRole("button", { name: "Profile", exact: true }).click();
@@ -96,7 +96,7 @@ test("exception A via natural language, outdated estimate and explicit confirmat
   await expect(
     p.getByRole("button", { name: "Book table for 8:00 PM" }),
   ).toBeEnabled();
-  await expect(p.getByText("Table booked", { exact: true })).toHaveCount(0);
+  await expect(p.getByText("Booking confirmed", { exact: true })).toHaveCount(0);
   await p.getByRole("button", { name: "Book table for 8:00 PM" }).click();
   await skip(p);
   await ride(p);

@@ -251,6 +251,7 @@ export type CardKind =
   | "decision"
   | "clarify";
 export type Message = {
+  committed?: boolean;
   id: number;
   kind: "main" | "alex" | "event" | "card";
   text?: string;

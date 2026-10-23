@@ -1,3 +1,4 @@
+import { canStopPlanning } from "../engine/bookingControls";
 import { useEffect, useRef, useState } from "react";
 import { motion } from "framer-motion";
 import { Check, Minus, Plus, X } from "lucide-react";
@@ -310,6 +311,13 @@ export function Sheets({
                             : "idle"
                       }
                     />
+                    {s.tasks[role] === "Working" && (
+                      <img
+                        className="who-working-ring"
+                        src={`${import.meta.env.BASE_URL}img/5fc6c.svg`}
+                        alt=""
+                      />
+                    )}
                     {s.tasks[role] === "Done" && (
                       <i>
                         <Check size={10} />
@@ -326,14 +334,34 @@ export function Sheets({
                       Pal
                     </strong>
                     <p>
-                      {s.tasks[role]}
+                      {s.tasks[role] === "Not started"
+                        ? "— Idle"
+                        : s.tasks[role]}
                       {role === "dining" && s.booked
                         ? ` · ${s.restaurant.name}`
                         : role === "mobility" && s.rideBooked
                           ? " · Driver arriving in 4 min"
-                          : ""}
+                          : role === "main"
+                            ? " · Coordinating your plan"
+                            : role === "dining" && s.tasks.dining === "Working"
+                              ? ` · ${s.step === "finding" ? `Finding ${s.plan.cuisine} places at ${s.plan.time}` : `Booking ${s.restaurant.name}`}`
+                              : role === "mobility" &&
+                                  s.tasks.mobility === "Working"
+                                ? ` · ${s.header.activity}`
+                                : ""}
                     </p>
                   </div>
+                  {canStopPlanning(s, role) && (
+                    <button
+                      className="pal-stop"
+                      onClick={() => {
+                        dispatch({ type: "STOP_PLANNING", value: role });
+                        close();
+                      }}
+                    >
+                      Stop
+                    </button>
+                  )}
                 </div>
               ))}
             </>

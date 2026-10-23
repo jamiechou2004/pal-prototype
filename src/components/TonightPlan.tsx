@@ -90,18 +90,19 @@ export function TonightPlan({
         </div>
       </div>
       {m.updateNote && <p className="plan-note">{m.updateNote}</p>}
-      {(s.booked ||
-        s.rideBooked ||
-        (!s.tableOutcome && s.step !== "complete") ||
-        (s.plan.ride && !s.rideOutcome)) && (
-        <button
-          className="plan-cancel"
-          disabled={!!s.cancelPrompt || (!latest && s.step === "cancelling")}
-          onClick={() => dispatch({ type: "CANCEL_PROMPT", value: "pick" })}
-        >
-          Cancel…
-        </button>
-      )}
+      {latest &&
+        (s.booked ||
+          s.rideBooked ||
+          (!s.tableOutcome && s.step !== "complete") ||
+          (s.plan.ride && !s.rideOutcome)) && (
+          <button
+            className="plan-cancel"
+            disabled={!!s.cancelPrompt || (!latest && s.step === "cancelling")}
+            onClick={() => dispatch({ type: "CANCEL_PROMPT", value: "pick" })}
+          >
+            Cancel…
+          </button>
+        )}
     </section>
   );
 }

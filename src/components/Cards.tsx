@@ -1,3 +1,4 @@
+import { ownsCancel } from "../engine/bookingControls";
 import { useRef, useState } from "react";
 import {
   RotateCw,
@@ -307,13 +308,7 @@ export function Card({
   const live = ["booking", "rideType"].includes(m.card || "") && active;
   const plan = live ? s.plan : p;
   const cancel = (target: "table" | "ride") => {
-    const available =
-      r.id === s.restaurant.id &&
-      (target === "table"
-        ? !s.tableOutcome &&
-          (s.booked ||
-            ["booking", "bookingWork", "updated", "stopping"].includes(s.step))
-        : !s.rideOutcome && s.plan.ride);
+    const available = ownsCancel(s, m, target);
     return available ? (
       <button
         className="booking-cancel"
@@ -381,10 +376,12 @@ export function Card({
         <h3>Your request</h3>
         <Row label="When">Tonight, {p.time}</Row>
         <Row label="Party">{p.party} people</Row>
-        <Row label="Cuisine">{p.cuisine}</Row>
+        <Row label="Restaurant type">{p.cuisine}</Row>
         <Row label="Budget">Up to ¥{p.budget} / person</Row>
-        <Row label="Then">{p.ride ? "Ride from my hotel" : "Dinner only"}</Row>
-        <div className="button-row">
+        <Row label="Ride after dinner">
+          {p.ride ? "Ride from my hotel" : "Dinner only"}
+        </Row>
+        <div className="request-actions">
           <Button
             secondary
             disabled={!active}
@@ -457,7 +454,11 @@ export function Card({
     return (
       <section className="card">
         <div className="booking-title">
-          <h3>Book {r.name}</h3>
+          <h3>
+            {s.tableOutcome && m.committed
+              ? "Table cancelled"
+              : `Book ${r.name}`}
+          </h3>
           {cancel("table")}
         </div>
         <Row label="When">
@@ -490,10 +491,7 @@ export function Card({
     return (
       <section className={`card ${!s.booked ? "obsolete" : ""}`}>
         <div className="booking-title">
-          <span className="success-tag">
-            <Check size={13} />
-            {s.booked ? "Table booked" : "Booking cancelled"}
-          </span>
+          <h3>{s.booked ? "Booking confirmed" : "Table cancelled"}</h3>
           {cancel("table")}
         </div>
         <Row label="Restaurant">
@@ -512,6 +510,52 @@ export function Card({
           onClick={() => open({ type: "staff", value: { r, p } })}
         >
           Show to staff
+        </Button>
+        <Button
+          secondary
+          disabled={!s.booked}
+          onClick={() => {
+            const date = new Date()
+              .toLocaleDateString("en-CA", { timeZone: "Asia/Shanghai" })
+              .replaceAll("-", "");
+            const match = p.time.match(/(\d+):(\d+)\s*(AM|PM)/i)!;
+            const hour =
+              (Number(match[1]) % 12) +
+              (match[3].toUpperCase() === "PM" ? 12 : 0);
+            const escape = (v: string) =>
+              v
+                .replace(/\\/g, "\\\\")
+                .replace(/\n/g, "\\n")
+                .replace(/[,;]/g, (c) => "\\" + c);
+            const data = [
+              "BEGIN:VCALENDAR",
+              "VERSION:2.0",
+              "PRODID:-//Pal//Prototype//EN",
+              "BEGIN:VEVENT",
+              `UID:pal-${date}-${r.id}@prototype`,
+              `DTSTAMP:${new Date()
+                .toISOString()
+                .replace(/[-:]/g, "")
+                .replace(/\.\d{3}/, "")}`,
+              `DTSTART;TZID=Asia/Shanghai:${date}T${String(hour).padStart(2, "0")}${match[2]}00`,
+              "DURATION:PT1H30M",
+              `SUMMARY:${escape(`Dinner at ${r.name}`)}`,
+              `LOCATION:${escape(r.address)}`,
+              "DESCRIPTION:Pal design prototype - no real reservation. Confirmation PAL-2048.",
+              "END:VEVENT",
+              "END:VCALENDAR",
+            ].join("\r\n");
+            const url = URL.createObjectURL(
+              new Blob([data], { type: "text/calendar" }),
+            );
+            const a = document.createElement("a");
+            a.href = url;
+            a.download = "pal-dinner.ics";
+            a.click();
+            setTimeout(() => URL.revokeObjectURL(url), 1000);
+          }}
+        >
+          Add to calendar
         </Button>
       </section>
     );
@@ -570,7 +614,12 @@ export function Card({
   if (m.card === "updated")
     return (
       <section className="card">
-        <h3>Updated plan</h3>
+        <div className="booking-title">
+          <h3>
+            {s.tableOutcome && m.committed ? "Table cancelled" : "Updated plan"}
+          </h3>
+          {cancel("table")}
+        </div>
         <div className="soft-block">
           <small>Dinner · Dining Pal</small>
           <p>
@@ -601,7 +650,11 @@ export function Card({
     return (
       <section className="card">
         <div className="booking-title">
-          <h3>Ride to {r.name}</h3>
+          <h3>
+            {s.rideOutcome && m.committed
+              ? "Ride cancelled"
+              : `Ride to ${r.name}`}
+          </h3>
           {cancel("ride")}
         </div>
         <p className="footnote">
@@ -693,13 +746,13 @@ export function Card({
   if (m.card === "rideSuccess")
     return (
       <section className={`card ${!s.rideBooked ? "obsolete" : ""}`}>
-        <RouteMap distance={rr.distance} />
         <div className="booking-title">
           <h3>
             {s.rideBooked ? "Driver arriving in 4 min" : "Ride cancelled"}
           </h3>
           {cancel("ride")}
         </div>
+        <RouteMap distance={rr.distance} />
         <p className="footnote">
           Pickup at your hotel lobby · arrive ~{rr.arrive}
         </p>

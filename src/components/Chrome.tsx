@@ -6,6 +6,7 @@ import {
   Signal,
   Wifi,
   BatteryFull,
+  TriangleAlert,
 } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { HandoffPal, Pal } from "./Pal";
@@ -62,6 +63,16 @@ export function NavBar({
               <motion.div
                 layout
                 className={`sub-pill ${h.branch}`}
+                role="button"
+                tabIndex={0}
+                aria-label="View working Pals"
+                onClick={onWho}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter" || e.key === " ") {
+                    e.preventDefault();
+                    onWho();
+                  }
+                }}
                 initial={{ height: 0, opacity: 0 }}
                 animate={{ height: 28, opacity: 1 }}
                 exit={{ height: 0, opacity: 0 }}
@@ -88,7 +99,7 @@ export function NavBar({
                     ) : h.branch === "done" ? (
                       <Check size={12} />
                     ) : (
-                      "!"
+                      <TriangleAlert size={12} />
                     )}
                   </span>
                   <motion.span
