@@ -12,7 +12,7 @@ export function Pal({
 }) {
   return (
     <span
-      className="pal"
+      className={`pal pal-${state}`}
       style={{ width: size, height: size }}
       aria-label={`${role} Pal ${state}`}
     >
@@ -29,7 +29,9 @@ export function Pal({
 export function HandoffPal({
   header,
   size = 32,
+  thinking = false,
 }: {
+  thinking?: boolean;
   header: Header;
   size?: number;
 }) {
@@ -37,11 +39,13 @@ export function HandoffPal({
   const working = header.branch === "working" && header.role !== "main";
   const role = header.both ? "dining" : header.role;
   const state =
-    header.branch === "done"
-      ? "done"
-      : header.branch === "attention"
-        ? "attention"
-        : "idle";
+    thinking || header.branch === "working"
+      ? "working"
+      : header.branch === "done"
+        ? "done"
+        : header.branch === "attention"
+          ? "attention"
+          : "idle";
   return (
     <span
       className="handoff-pal"

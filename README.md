@@ -74,3 +74,7 @@ Key screens and components were read through design context. The Figma Education
 - `tests/flows.spec.ts`: browser journeys in Chromium and mobile WebKit.
 
 GitHub Actions builds and deploys `dist` to Pages on push to `main`.
+
+### Motion feedback
+
+Characters now breathe while idle, visibly think while Main Pal reads a request or coordinates work, respond with a short success/attention gesture, and move with offset timing during handoff. Existing message and sheet transitions are retained; card/page entry, button press, selection, map arrival, and translation playback feedback complete the interaction states. The demo Pause control also freezes CSS motion. Reduced-motion preferences disable decorative CSS animation and are respected by MotionConfig. Thinking status is labelled for assistive technology; decorative dots are hidden from it.

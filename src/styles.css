@@ -2209,3 +2209,245 @@ mark {
 .sheet-footer .button {
   width: 100%;
 }
+
+/* Motion language: living characters, short feedback, no perpetual card motion. */
+.pal {
+  transform-origin: 50% 65%;
+}
+.pal-idle {
+  animation: pal-breathe 3.6s ease-in-out infinite;
+}
+.pal-working {
+  animation: pal-think 1.25s ease-in-out infinite;
+}
+.pal-listening {
+  animation: pal-listen 1.5s ease-in-out infinite;
+}
+.pal-waiting {
+  animation: pal-breathe 2.8s ease-in-out infinite;
+}
+.pal-done {
+  animation: pal-celebrate 620ms ease-out both;
+}
+.pal-attention,
+.pal-failed {
+  animation: pal-attention 480ms ease-in-out both;
+}
+.handoff-partner .pal-working {
+  animation-delay: -625ms;
+}
+.start-pals .pal {
+  animation: pal-float 3.6s ease-in-out infinite;
+}
+@keyframes pal-breathe {
+  0%,
+  100% {
+    transform: scale(1);
+  }
+  50% {
+    transform: translateY(-1px) scale(1.025);
+  }
+}
+@keyframes pal-think {
+  0%,
+  100% {
+    transform: translateY(0) rotate(-5deg) scale(1);
+  }
+  35% {
+    transform: translateY(-3px) rotate(4deg) scale(1.035, 0.97);
+  }
+  65% {
+    transform: translateY(-1px) rotate(4deg) scale(0.98, 1.035);
+  }
+}
+@keyframes pal-listen {
+  0%,
+  100% {
+    transform: scale(1) rotate(-3deg);
+  }
+  50% {
+    transform: scale(1.06) rotate(3deg);
+  }
+}
+@keyframes pal-float {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-6px) rotate(2deg);
+  }
+}
+@keyframes pal-celebrate {
+  0% {
+    transform: scale(0.9);
+  }
+  40% {
+    transform: translateY(-5px) scale(1.1);
+  }
+  70% {
+    transform: scale(0.98);
+  }
+  100% {
+    transform: none;
+  }
+}
+@keyframes pal-attention {
+  0%,
+  100% {
+    transform: rotate(0);
+  }
+  25% {
+    transform: rotate(-7deg);
+  }
+  65% {
+    transform: rotate(5deg);
+  }
+}
+.thinking {
+  animation: reveal-soft 220ms ease-out both;
+}
+.thinking-dots {
+  display: inline-flex;
+  gap: 3px;
+  margin-left: 4px;
+  animation: none;
+  vertical-align: middle;
+}
+.thinking-dots i {
+  width: 3px;
+  height: 3px;
+  border-radius: 50%;
+  background: currentColor;
+  animation: thought-dot 1.2s ease-in-out infinite;
+}
+.thinking-dots i:nth-child(2) {
+  animation-delay: 150ms;
+}
+.thinking-dots i:nth-child(3) {
+  animation-delay: 300ms;
+}
+@keyframes thought-dot {
+  0%,
+  65%,
+  100% {
+    opacity: 0.3;
+    transform: translateY(0);
+  }
+  30% {
+    opacity: 1;
+    transform: translateY(-3px);
+  }
+}
+button,
+a,
+.cancel-check {
+  transition:
+    background-color 160ms ease,
+    color 160ms ease,
+    border-color 160ms ease,
+    box-shadow 160ms ease,
+    opacity 160ms ease,
+    scale 140ms ease;
+}
+button:not(:disabled):not(.scrim):active {
+  scale: 0.96;
+}
+button:focus-visible,
+a:focus-visible {
+  outline: 2px solid #067a3e;
+  outline-offset: 3px;
+}
+@media (hover: hover) {
+  button:not(:disabled):not(.scrim):hover {
+    filter: brightness(0.96);
+  }
+}
+.input-field,
+.sheet-input,
+.anything-else textarea {
+  transition:
+    border-color 180ms ease,
+    box-shadow 180ms ease;
+}
+.input-field:focus-within {
+  box-shadow: 0 0 0 2px rgba(6, 122, 62, 0.15);
+}
+.profile,
+.start-screen {
+  animation: reveal-soft 280ms ease-out both;
+}
+.profile-row {
+  animation: reveal-soft 260ms ease-out both;
+}
+.profile-row:nth-child(3) {
+  animation-delay: 50ms;
+}
+.profile-row:nth-child(4) {
+  animation-delay: 100ms;
+}
+.restaurant-card {
+  animation: reveal-soft 320ms ease-out both;
+}
+.restaurant-card:nth-child(2) {
+  animation-delay: 60ms;
+}
+.restaurant-card:nth-child(3) {
+  animation-delay: 120ms;
+}
+.plan-tag,
+.success-tag,
+.plan-status,
+.translation-notice,
+.translated-text {
+  animation: reveal-soft 260ms ease-out both;
+}
+.map-route {
+  animation: reveal-soft 500ms ease-out both;
+}
+.map-car,
+.map-you {
+  animation: pal-celebrate 550ms ease-out both;
+}
+.answered-card > *,
+.quick-replies {
+  transition: opacity 240ms ease;
+}
+.audio-active svg {
+  animation: audio-pulse 900ms ease-in-out infinite;
+}
+@keyframes audio-pulse {
+  0%,
+  100% {
+    opacity: 0.55;
+    scale: 0.92;
+  }
+  50% {
+    opacity: 1;
+    scale: 1.1;
+  }
+}
+@keyframes reveal-soft {
+  from {
+    opacity: 0;
+    translate: 0 6px;
+  }
+  to {
+    opacity: 1;
+    translate: 0 0;
+  }
+}
+.workspace[data-paused="true"] *,
+.workspace[data-paused="true"] *::before,
+.workspace[data-paused="true"] *::after {
+  animation-play-state: paused !important;
+}
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation: none !important;
+    transition: none !important;
+    scroll-behavior: auto !important;
+  }
+}

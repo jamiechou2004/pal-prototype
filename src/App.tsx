@@ -187,7 +187,7 @@ export default function App() {
   ].includes(s.step);
   return (
     <MotionConfig reducedMotion="user">
-      <main className="workspace">
+      <main className="workspace" data-paused={s.paused}>
         <aside
           className="desktop-intro"
           lang={introLanguage === "zh" ? "zh-CN" : "en"}

@@ -251,7 +251,11 @@ export function TranslateSheet({
             <div className="translation-label">
               <b>{reverse ? "English" : "中文"}</b>
             </div>
-            <p className="translated-text" lang={reverse ? "en" : "zh-CN"}>
+            <p
+              key={target}
+              className="translated-text"
+              lang={reverse ? "en" : "zh-CN"}
+            >
               {target}
             </p>
             {!reverse && (
@@ -268,7 +272,7 @@ export function TranslateSheet({
           <div className="translation-actions">
             {reverse ? (
               <button
-                className="button secondary"
+                className={`button secondary ${listening ? "audio-active" : ""}`}
                 disabled={listening}
                 onClick={driverReply}
               >
@@ -277,7 +281,7 @@ export function TranslateSheet({
               </button>
             ) : (
               <button
-                className="button primary"
+                className={`button primary ${speaking ? "audio-active" : ""}`}
                 onClick={() => (speaking ? stop() : speak(target, "zh-CN"))}
               >
                 <Speaker size={18} />

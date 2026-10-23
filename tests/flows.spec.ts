@@ -233,7 +233,7 @@ test("edit time before approval, pause, and stale controls", async ({
     .click();
   await p.waitForTimeout(1800);
   await expect(
-    p.getByText("Reading your request…", { exact: false }),
+    p.getByRole("status", { name: "Reading your request…" }),
   ).toBeVisible();
   await p
     .getByRole("button", { name: "Resume", exact: true })

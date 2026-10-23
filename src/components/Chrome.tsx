@@ -51,7 +51,7 @@ export function NavBar({
             onClick={onWho}
             aria-label="Who's working on tonight"
           >
-            <HandoffPal header={h} />
+            <HandoffPal header={h} thinking={Boolean(s.thinking)} />
             <span>
               <strong>Main Pal</strong>
               <small>Dinner tonight</small>
@@ -234,11 +234,15 @@ export function InputBar({
   return (
     <footer className="input-zone">
       {s.thinking && (
-        <div className="thinking">
+        <div className="thinking" role="status" aria-label={s.thinking}>
           <Pal size={24} state="working" />
           <span>
             {s.thinking.replace(/[.…]+$/, "")}
-            <span className="thinking-dots">…</span>
+            <span className="thinking-dots" aria-hidden="true">
+              <i />
+              <i />
+              <i />
+            </span>
           </span>
         </div>
       )}

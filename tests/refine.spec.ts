@@ -119,7 +119,7 @@ test("recording stop/send lifecycle and unsupported browser fallback", async ({
     (window as any).webkitSpeechRecognition = undefined;
   });
   await p.getByRole("button", { name: "Use voice" }).click();
-  await expect(p.getByRole("status")).toContainText("Please type your message");
+  await expect(p.getByRole("status").filter({ hasText: "Please type your message" })).toContainText("Please type your message");
 });
 test("restaurant data, clock arithmetic and cancellation state across pending dinner steps", () => {
   const expected = [
