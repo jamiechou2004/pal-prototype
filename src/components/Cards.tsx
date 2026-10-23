@@ -383,7 +383,7 @@ export function Card({
         )}
         <button
           className="choice"
-          disabled={s.step !== "exception"}
+          disabled={!active || s.step !== "exception"}
           onClick={send("CHOOSE_A")}
         >
           <span>
@@ -395,7 +395,7 @@ export function Card({
         </button>
         <button
           className="choice"
-          disabled={s.step !== "exception"}
+          disabled={!active || s.step !== "exception"}
           onClick={send("CHOOSE_B")}
         >
           <span>
@@ -409,7 +409,7 @@ export function Card({
           <span className="footnote">Or change time, budget or cuisine</span>
           <button
             className="chip"
-            disabled={s.step !== "exception"}
+            disabled={!active || s.step !== "exception"}
             onClick={() => open({ type: "edit", value: "custom" })}
           >
             Customize

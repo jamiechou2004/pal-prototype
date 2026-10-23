@@ -272,7 +272,13 @@ export function Sheets({
               <Button disabled={!changed || draft.budget < 50} onClick={submit}>
                 {sheet.value === "request"
                   ? `Update request · ${changes.join(" · ") || draft.time}`
-                  : `Update · ${draft.cuisine} at ${draft.time}`}
+                  : `Update · ${draft.cuisine} at ${draft.time}${changes
+                      .filter(
+                        (change) =>
+                          change !== draft.time && change !== draft.cuisine,
+                      )
+                      .map((change) => ` · ${change}`)
+                      .join("")}`}
               </Button>
             </>
           )}
