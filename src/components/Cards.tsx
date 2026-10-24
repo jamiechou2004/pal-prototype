@@ -636,7 +636,7 @@ export function Card({
     );
   if (m.card === "rideType")
     return (
-      <section className="card">
+      <section className="card ride-type-card" data-component="ride-type">
         <div className="booking-title">
           <h3>
             {s.rideOutcome && m.committed
@@ -733,17 +733,22 @@ export function Card({
     );
   if (m.card === "rideSuccess")
     return (
-      <section className={`card ${!s.rideBooked ? "obsolete" : ""}`}>
-        <div className="booking-title">
-          <h3>
-            {s.rideBooked ? "Driver arriving in 4 min" : "Ride cancelled"}
-          </h3>
-          {cancel("ride")}
-        </div>
+      <section
+        className={`card ride-success-card ${!s.rideBooked ? "obsolete" : ""}`}
+        data-component="ride-success"
+      >
         <RouteMap distance={rr.distance} />
-        <p className="footnote">
-          Pickup at your hotel lobby · arrive ~{rr.arrive}
-        </p>
+        <div className="ride-success-header">
+          <div className="booking-title">
+            <h3>
+              {s.rideBooked ? "Driver arriving in 4 min" : "Ride cancelled"}
+            </h3>
+            {cancel("ride")}
+          </div>
+          <p className="footnote">
+            Pickup at your hotel lobby · arrive ~{rr.arrive}
+          </p>
+        </div>
         <div className="driver-block">
           <img
             className="driver-car"
@@ -755,8 +760,9 @@ export function Card({
             <small>{m.carIndex ? "Silver" : "White"} sedan</small>
             <small className="driver-name">
               <img src={asset("0ab6d.png")} alt="Driver Wang" />
-              Driver Wang · <Star size={11} fill="currentColor" />
-              4.9
+              <span>
+                Driver Wang · <Star size={13} fill="currentColor" /> 4.9
+              </span>
             </small>
           </div>
         </div>

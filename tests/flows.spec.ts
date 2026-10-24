@@ -38,6 +38,16 @@ async function book(p: Page) {
 }
 async function ride(p: Page) {
   await skip(p);
+  const type = p.locator('[data-component="ride-type"]').last();
+  await expect(type).toHaveCSS("border-radius", "12px");
+  await expect(type.locator(".ride-option img").first()).toHaveCSS(
+    "width",
+    "52px",
+  );
+  await expect(type.locator(".ride-option small").first()).toHaveCSS(
+    "font-size",
+    "13px",
+  );
   await p.getByRole("radio", { name: /Comfort/ }).click();
   await p.getByRole("button", { name: /^Confirm Comfort/ }).click();
   await skip(p);
@@ -49,6 +59,12 @@ async function ride(p: Page) {
   await expect(
     p.getByRole("heading", { name: "Driver arriving in 4 min" }),
   ).toBeVisible();
+  const driver = p.locator('[data-component="ride-success"]').last();
+  await expect(driver.locator(":scope > :first-child")).toHaveClass(
+    "route-map",
+  );
+  await expect(driver.locator(".driver-car")).toHaveCSS("width", "112px");
+  await expect(driver).toHaveCSS("gap", "14px");
   await skip(p);
 }
 async function exception(p: Page) {

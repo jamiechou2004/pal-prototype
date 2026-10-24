@@ -2623,3 +2623,90 @@ a:focus-visible {
   font-size: 20px;
   overflow-wrap: anywhere;
 }
+
+/* Shared Figma ride components, in every normal and exception branch. */
+.card.ride-type-card,
+.card.ride-success-card {
+  border-radius: 12px;
+  padding: 16px;
+}
+.ride-type-card .ride-option {
+  gap: 12px;
+  padding: 12px 14px;
+  border-width: 1.5px;
+  width: 100%;
+}
+.ride-type-card .ride-option img {
+  width: 52px;
+  height: 28px;
+  flex: none;
+}
+.ride-type-card .ride-option > span:first-of-type {
+  min-width: 0;
+}
+.ride-type-card .ride-option strong {
+  font-size: 15px;
+  line-height: 20px;
+  font-weight: 600;
+}
+.ride-type-card .ride-option small {
+  font-size: 13px;
+  line-height: 18px;
+  margin-top: 2px;
+}
+.ride-type-card .ride-option > span:last-child {
+  font-size: 15px;
+  line-height: 20px;
+}
+.ride-success-card {
+  gap: 14px;
+}
+.ride-success-header {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.ride-success-card .driver-block {
+  border-radius: 12px;
+}
+.ride-success-card .driver-car {
+  width: 112px;
+  height: 68px;
+  flex: none;
+}
+.ride-success-card .driver-block > div {
+  min-width: 0;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.ride-success-card .driver-block h2 {
+  font-size: 22px;
+  line-height: 28px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+.ride-success-card .driver-block small {
+  font-size: 13px;
+  line-height: 18px;
+}
+.ride-success-card .driver-name {
+  gap: 6px;
+  margin-top: 0;
+  white-space: normal;
+}
+.ride-success-card .driver-name img {
+  flex: none;
+  margin: 0;
+}
+.ride-success-card .driver-name svg {
+  display: inline;
+  vertical-align: -2px;
+}
+.answered-card .card > .ride-success-header {
+  opacity: 1;
+}
+.answered-card .ride-success-header > .footnote {
+  opacity: 0.55;
+}
