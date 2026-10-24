@@ -203,6 +203,11 @@ function Carousel({
                   English menu
                 </span>
               )}
+              {r.englishMenu && r.foreignCards && (
+                <i className="tag-separator" aria-hidden="true">
+                  ·
+                </i>
+              )}
               {r.foreignCards && (
                 <span>
                   <CreditCard size={14} aria-hidden="true" />

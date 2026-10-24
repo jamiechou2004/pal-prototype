@@ -2047,8 +2047,19 @@ mark {
   overflow: hidden;
 }
 .restaurant-card .tags {
-  gap: 16px;
+  gap: 0;
+  padding: 0 16px;
   flex-wrap: wrap;
+}
+.restaurant-card .tag-separator {
+  margin: 0 8px;
+  font-style: normal;
+  font-size: 13px;
+  line-height: 20px;
+  color: var(--text-secondary);
+}
+.restaurant-card .recommend-why {
+  padding: 10px 16px;
 }
 .restaurant-card .tags > span {
   display: inline-flex;

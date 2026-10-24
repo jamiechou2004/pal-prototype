@@ -236,7 +236,15 @@ test("restaurant geometry, SVG tags and dark green actions on narrow screens", a
   const card = p.locator(".restaurant-card").last();
   await card.scrollIntoViewIfNeeded();
   expect(await card.locator(".tags svg").count()).toBe(2);
-  await expect(card.locator(".tags")).toHaveCSS("gap", "16px");
+  await expect(card.locator(".tag-separator")).toHaveText("·");
+  await expect(card.locator(".tag-separator")).toHaveCSS("margin", "0px 8px");
+  const starts = await card.evaluate((el) =>
+    [".tags svg", ".recommend-pal", ".trip-row > div"].map(
+      (selector) => el.querySelector(selector)!.getBoundingClientRect().left,
+    ),
+  );
+  expect(Math.max(...starts) - Math.min(...starts)).toBeLessThan(1);
+  await expect(card.locator(".tags")).toHaveCSS("gap", "0px");
   await expect(card.locator(".tags > span").first()).toHaveCSS(
     "background-color",
     "rgba(0, 0, 0, 0)",
