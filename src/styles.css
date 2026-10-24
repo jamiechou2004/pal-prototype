@@ -424,8 +424,9 @@ small {
 }
 .alex-bubble {
   background: var(--accent-subtle);
-  max-width: 100%;
-  min-width: 180px;
+  width: fit-content;
+  max-width: min(100%, 292px);
+  min-width: 0;
 }
 .reaction {
   position: absolute;
@@ -2709,4 +2710,24 @@ a:focus-visible {
 }
 .answered-card .ride-success-header > .footnote {
   opacity: 0.55;
+}
+
+.permission-choice {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.permission-choice > p {
+  margin: 0;
+  font-size: 13px;
+  line-height: 18px;
+  text-align: center;
+  color: var(--text-secondary);
+}
+.permission-card .permission-deny {
+  background: none;
+  border: none;
+  border-radius: 0;
+  color: var(--text-secondary);
+  font-size: 17px;
 }

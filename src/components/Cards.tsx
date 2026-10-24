@@ -436,38 +436,61 @@ export function Card({
         </div>
       </section>
     );
-  if (m.card === "permission")
+  if (m.card === "permission") {
+    const pickup = m.text === "pickup";
+    const enabled =
+      active &&
+      (pickup
+        ? s.step === "denied" &&
+          s.pickupPermissionRequested &&
+          s.messages
+            .filter((x) => x.card === "permission" || x.card === "denied")
+            .at(-1)?.id === m.id
+        : s.step === "permission");
     return (
-      <section className="card">
-        <h3>Share your location?</h3>
-        <Row label="With">Dining Pal · Mobility Pal</Row>
+      <section className="card permission-card">
+        <h3>
+          {pickup ? "Share your location for pickup?" : "Share your location?"}
+        </h3>
+        <Row label="With">
+          {pickup ? "Mobility Pal" : "Dining Pal · Mobility Pal"}
+        </Row>
         <Row label="What">Where you are now — or the hotel you type in</Row>
         <Row label="Used for">
-          Nearby restaurants, travel time, fare, pickup point
+          {pickup
+            ? "Travel time, fare, pickup point"
+            : "Nearby restaurants, travel time, fare, pickup point"}
         </Row>
-        <Row label="Valid">Once, or until tonight's plan ends</Row>
-        <Button
-          disabled={s.step !== "permission"}
-          onClick={send("PERMISSION", "tonight")}
-        >
-          Allow for tonight
-        </Button>
-        <Button
-          secondary
-          disabled={s.step !== "permission"}
-          onClick={send("PERMISSION", "once")}
-        >
-          Allow once
-        </Button>
+        <div className="permission-choice">
+          <Button disabled={!enabled} onClick={send("PERMISSION", "tonight")}>
+            Allow for tonight
+          </Button>
+          <p>Stops after your ride. No more asking tonight.</p>
+        </div>
+        <div className="permission-choice">
+          <Button
+            secondary
+            disabled={!enabled}
+            onClick={send("PERMISSION", "once")}
+          >
+            Allow once
+          </Button>
+          <p>
+            {pickup
+              ? "Just for finding your pickup. No ongoing location access."
+              : "Just for finding restaurants. I'll ask again before your ride."}
+          </p>
+        </div>
         <button
-          className="text-action"
-          disabled={s.step !== "permission"}
+          className="text-action permission-deny"
+          disabled={!enabled}
           onClick={send("PERMISSION", "deny")}
         >
           Don't allow
         </button>
       </section>
     );
+  }
   if (m.card === "denied")
     return (
       <section className="card">

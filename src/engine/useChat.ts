@@ -351,12 +351,15 @@ export function reducer(state: State, a: Action): State {
     case "PERMISSION": {
       if (s.step !== "permission" && !s.pickupNeeded) return state;
       const initialPermission = s.step === "permission";
+      const pickupPermission = !!s.pickupPermissionRequested;
       if (a.value === "deny") {
         msg("alex", "Don't allow");
         s.pickupNeeded = s.plan.ride;
         msg(
           "main",
-          "No problem. I'll still find restaurants. For the ride, type your hotel name, or skip the ride for now.",
+          pickupPermission
+            ? "No problem. Your table is booked. Type your hotel name for pickup, or skip the ride."
+            : "No problem. I'll still find restaurants. For the ride, type your hotel name, or skip the ride for now.",
         );
         card("denied");
       } else if (a.value === "skip") {
@@ -365,10 +368,14 @@ export function reducer(state: State, a: Action): State {
         s.rideOutcome = "stopped";
         msg("alex", "Skip the ride");
       } else {
-        s.permission = true;
+        s.permission = a.value === "tonight" || a.value === "allow";
         s.pickupNeeded = false;
         if (["allow", "once", "tonight"].includes(a.value)) {
           s.permissionScope = a.value === "once" ? "once" : "tonight";
+          if (initialPermission && a.value === "once") {
+            s.permission = false;
+            s.pickupNeeded = s.plan.ride;
+          }
           msg("alex", a.value === "once" ? "Allow once" : "Allow for tonight");
         } else {
           s.plan.pickup = a.value;
@@ -376,7 +383,8 @@ export function reducer(state: State, a: Action): State {
         }
       }
       if (initialPermission) find(s.plan.cuisine === "Cantonese" ? 2 : 0);
-      else if (s.step === "denied") {
+      else if (s.step === "denied" && a.value !== "deny") {
+        s.pickupPermissionRequested = false;
         if (s.plan.ride) {
           work("mobility", "Mobility · Route & fare");
           msg("event", "Message to", "mobility");
@@ -836,11 +844,21 @@ export function reducer(state: State, a: Action): State {
           off();
           if (s.plan.ride && s.pickupNeeded) {
             s.step = "denied";
-            msg(
-              "main",
-              "Your table is booked. Type your hotel name for the ride, or skip the ride for now.",
-            );
-            card("denied");
+            if (s.permissionScope === "once" && !s.pickupPermissionRequested) {
+              s.pickupPermissionRequested = true;
+              s.version++;
+              msg(
+                "main",
+                "Your table is booked. You allowed location once for restaurants. May I use it again for your pickup?",
+              );
+              card("permission", { text: "pickup" });
+            } else {
+              msg(
+                "main",
+                "Your table is booked. Type your hotel name for the ride, or skip the ride for now.",
+              );
+              card("denied");
+            }
           } else if (s.plan.ride) {
             s.step = "rideType";
             s.tasks.mobility = "Waiting for you";

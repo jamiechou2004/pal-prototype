@@ -323,6 +323,7 @@ export type State = {
   rideOutcome?: "cancelled" | "stopped";
   pickupNeeded?: boolean;
   permissionScope?: "once" | "tonight";
+  pickupPermissionRequested?: boolean;
   updateNote?: string;
   exceptionRestaurant?: string;
   askAboutRide?: boolean;

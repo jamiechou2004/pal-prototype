@@ -14,7 +14,7 @@ function ready(ride = true) {
     ["SEND_REQUEST", { text: "Dinner and ride", plan: {} }],
     ["TICK"],
     ["APPROVE_REQUEST"],
-    ["PERMISSION", "once"],
+    ["PERMISSION", "tonight"],
     ["TICK"],
     ["SELECT_RESTAURANT", restaurants[0]],
     ["TICK"],
@@ -175,6 +175,14 @@ async function browserReady(p: Page, finish = true) {
   await tick(p);
   await p.getByRole("button", { name: "Share & book table" }).click();
   await tick(p);
+  await tick(p);
+  await expect(
+    p.getByRole("heading", { name: "Share your location for pickup?" }),
+  ).toBeVisible();
+  await p
+    .getByRole("button", { name: "Allow once", exact: true })
+    .last()
+    .click();
   await tick(p);
   if (!finish) return;
   await p.getByRole("button", { name: /^Confirm Economy/ }).click();

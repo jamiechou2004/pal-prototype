@@ -4,7 +4,8 @@ async function skip(p: Page) {
     .getByRole("button", { name: /^Skip wait/ })
     .filter({ visible: true })
     .first();
-  if (await b.count()) await b.click();
+  // Debug waits may finish naturally while the chat scrolls.
+  await b.evaluateAll((buttons) => (buttons[0] as HTMLButtonElement | undefined)?.click());
 }
 async function start(
   p: Page,
@@ -276,6 +277,14 @@ test("edit time before approval, pause, and stale controls", async ({
   await skip(p);
   await select(p);
   await book(p);
+  await skip(p);
+  await expect(
+    p.getByRole("heading", { name: "Share your location for pickup?" }),
+  ).toBeVisible();
+  await p
+    .getByRole("button", { name: "Allow once", exact: true })
+    .last()
+    .click();
   await skip(p);
   await expect(p.getByText(/leave 7:35 PM/)).toBeVisible();
 });
