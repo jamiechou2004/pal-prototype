@@ -16,7 +16,16 @@ export default defineConfig({
     reuseExistingServer: true,
   },
   projects: [
-    { name: "chromium", use: { ...devices["Desktop Chrome"] } },
-    { name: "webkit-mobile", use: { ...devices["iPhone 13"] } },
+    {
+      name: "chromium",
+      use: {
+        ...devices["Desktop Chrome"],
+        viewport: { width: 1280, height: 800 },
+      },
+    },
+    {
+      name: "webkit-mobile",
+      use: { ...devices["iPhone 13"], viewport: { width: 402, height: 874 } },
+    },
   ],
 });

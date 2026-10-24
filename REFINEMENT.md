@@ -17,3 +17,13 @@ Implemented against `Pal-web-prototype-refine.md`, with the original spec and sa
 ## Prototype limits
 
 No actual reservations, rides, payments, live location, or translation backend. Driver reply is scripted sample content. Browser speech recognition and TTS depend on browser/platform support. Source-unspecified Comfort/Premium quotes for secondary restaurants remain illustrative extensions. These details live in documentation rather than the phone's product flow.
+
+## Refine 2 execution update · 2026-10-24
+
+The 04:14 document revision adds execution order, fixed acceptance viewports, preservation of confirmed decisions, and reporting of limitations. It adds no new interface, content, or flow requirements compared with the 04:02 revision implemented in 5147d13.
+
+The default Playwright projects now use desktop Chromium at 1280 × 800 and mobile WebKit at 402 × 874. Existing tests cover permission/denial/pickup reauthorization, all dinner branches, cancellation scope and results, message reactions, natural-language confirmations, preferences, in-flight stopping, shared card styling, staff details, translation, and motion.
+
+The prototype limitations above remain: no real location permission, ride-end event, booking service, or live translation backend. Therefore automatic real-world location expiry after a ride is a stated interaction policy, not an integration implemented by this frontend.
+
+Validation: all 78 Playwright cases passed on the two configured acceptance viewports (2026-10-24). A few dedicated geometry tests additionally resize the viewport to exercise narrow layouts.
