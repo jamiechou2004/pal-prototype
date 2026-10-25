@@ -40,7 +40,9 @@ test("tonight does not ask again; pickup once resumes only once", () => {
   expect(s.step).toBe("rideType");
   expect(act(s, "PERMISSION", "once")).toEqual(s);
 });
-test("permission captions and short reply geometry", async ({ page: p }) => {
+test("compact permission expiry row and short reply geometry", async ({
+  page: p,
+}) => {
   await p.goto("?flow=normal&debug=1");
   await p.getByRole("textbox", { name: "Message Main Pal" }).click();
   await p.getByRole("button", { name: "Send message", exact: true }).click();
@@ -48,13 +50,12 @@ test("permission captions and short reply geometry", async ({ page: p }) => {
   await p.getByRole("button", { name: "Looks good", exact: true }).click();
   const card = p.locator(".permission-card");
   await expect(card.getByText("Valid", { exact: true })).toHaveCount(0);
+  await expect(card.getByText("Ends", { exact: true })).toBeVisible();
   await expect(
-    card.getByText("Stops after your ride. No more asking tonight."),
+    card.getByText("Automatically after your ride", { exact: true }),
   ).toBeVisible();
-  await expect(card.locator(".permission-choice").first()).toHaveCSS(
-    "gap",
-    "6px",
-  );
+  await expect(card.locator("p")).toHaveCount(0);
+  await expect(card.locator(":scope > button")).toHaveCount(3);
   await expect(card.getByRole("button", { name: "Don't allow" })).toHaveCSS(
     "background-color",
     "rgba(0, 0, 0, 0)",

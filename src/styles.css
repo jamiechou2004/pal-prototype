@@ -2712,18 +2712,6 @@ a:focus-visible {
   opacity: 0.55;
 }
 
-.permission-choice {
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-}
-.permission-choice > p {
-  margin: 0;
-  font-size: 13px;
-  line-height: 18px;
-  text-align: center;
-  color: var(--text-secondary);
-}
 .permission-card .permission-deny {
   background: none;
   border: none;

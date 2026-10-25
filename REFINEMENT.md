@@ -27,3 +27,7 @@ The default Playwright projects now use desktop Chromium at 1280 × 800 and mobi
 The prototype limitations above remain: no real location permission, ride-end event, booking service, or live translation backend. Therefore automatic real-world location expiry after a ride is a stated interaction policy, not an integration implemented by this frontend.
 
 Validation: all 78 Playwright cases passed on the two configured acceptance viewports (2026-10-24). A few dedicated geometry tests additionally resize the viewport to exercise narrow layouts.
+
+## Compact location permission · 2026-10-25
+
+Updated both initial and pickup permission cards to show `Ends — Automatically after your ride`. Removed all button captions and their wrapper styles; the three actions remain stacked, with Don't allow as plain grey text. One-time permission still requires pickup reauthorization. This supersedes the previous caption-based layout.

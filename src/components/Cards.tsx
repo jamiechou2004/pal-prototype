@@ -461,26 +461,17 @@ export function Card({
             ? "Travel time, fare, pickup point"
             : "Nearby restaurants, travel time, fare, pickup point"}
         </Row>
-        <div className="permission-choice">
-          <Button disabled={!enabled} onClick={send("PERMISSION", "tonight")}>
-            Allow for tonight
-          </Button>
-          <p>Stops after your ride. No more asking tonight.</p>
-        </div>
-        <div className="permission-choice">
-          <Button
-            secondary
-            disabled={!enabled}
-            onClick={send("PERMISSION", "once")}
-          >
-            Allow once
-          </Button>
-          <p>
-            {pickup
-              ? "Just for finding your pickup. No ongoing location access."
-              : "Just for finding restaurants. I'll ask again before your ride."}
-          </p>
-        </div>
+        <Row label="Ends">Automatically after your ride</Row>
+        <Button disabled={!enabled} onClick={send("PERMISSION", "tonight")}>
+          Allow for tonight
+        </Button>
+        <Button
+          secondary
+          disabled={!enabled}
+          onClick={send("PERMISSION", "once")}
+        >
+          Allow once
+        </Button>
         <button
           className="text-action permission-deny"
           disabled={!enabled}
