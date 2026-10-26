@@ -379,44 +379,19 @@ export function Card({
     return (
       <section className="card">
         <h3>Your request</h3>
-        <Row
-          label="When"
-          edit={
-            active ? () => open({ type: "edit", value: "request" }) : undefined
-          }
-        >
+        <Row label="When">
           Tonight, {p.time}
         </Row>
-        <Row
-          label="Party"
-          edit={
-            active ? () => open({ type: "edit", value: "request" }) : undefined
-          }
-        >
+        <Row label="Party">
           {p.party} people
         </Row>
-        <Row
-          label="Cuisine"
-          edit={
-            active ? () => open({ type: "edit", value: "request" }) : undefined
-          }
-        >
+        <Row label="Cuisine">
           {p.cuisine}
         </Row>
-        <Row
-          label="Budget"
-          edit={
-            active ? () => open({ type: "edit", value: "request" }) : undefined
-          }
-        >
+        <Row label="Budget">
           Under ¥{p.budget} per person
         </Row>
-        <Row
-          label="Then"
-          edit={
-            active ? () => open({ type: "edit", value: "request" }) : undefined
-          }
-        >
+        <Row label="Then">
           {p.ride ? "A ride from your hotel" : "Dinner only"}
         </Row>
         <div className="request-actions">

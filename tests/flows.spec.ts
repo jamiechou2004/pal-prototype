@@ -262,8 +262,8 @@ test("edit time before approval, pause, and stale controls", async ({
   await skip(p);
   await expect(
     p.locator('[data-message="request"] .detail-row button'),
-  ).toHaveCount(5);
-  await p.getByRole("button", { name: "Edit When", exact: true }).click();
+  ).toHaveCount(0);
+  await p.getByRole("button", { name: "Edit", exact: true }).click();
   await p.getByRole("button", { name: "8:00 PM", exact: true }).click();
   await p.getByRole("button", { name: "Update request · 8:00 PM" }).click();
   await expect(
